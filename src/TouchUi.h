@@ -1,6 +1,5 @@
 #pragma once
 
-#include "cinder/Vector.h"
 #include "cinder/app/TouchEvent.h"
 #include "cinder/app/Window.h"
 

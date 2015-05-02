@@ -94,7 +94,7 @@ void CubeApp::resize()
 void CubeApp::update()
 {
 	if ( mTouchUi.isTapped() ) {
-		CI_LOG_V( mTouchUi.getTapPosition() );
+		CI_LOG_V( mTouchUi.getTapPosition( true ) );
 	}
 }
 

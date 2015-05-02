@@ -67,6 +67,8 @@ public:
 	
 	float					getInterpolationSpeed() const;
 	const ci::Path2d&		getMask() const;
+	int32_t					getNumTouchPointsMax() const;
+	int32_t					getNumTouchPointsMin() const;
 	const ci::vec2&			getPanMax() const;
 	const ci::vec2&			getPanMin() const;
 	const ci::vec2&			getPanSpeed() const;
@@ -83,6 +85,9 @@ public:
 	void					setMask( const ci::Path2d& path );
 	void					setMask( const ci::Rectf& bounds );
 	void					setMask( const ci::vec2& center, float radius, size_t numSegments = 12 );
+	void					setNumTouchPoints( int32_t min, int32_t max );
+	void					setNumTouchPointsMax( int32_t v );
+	void					setNumTouchPointsMin( int32_t v );
 	void					setPan( const ci::vec2& v );
 	void					setPanMax( const ci::vec2& v );
 	void					setPanMin( const ci::vec2& v );
@@ -125,6 +130,8 @@ protected:
 	
 	float					mInterpolationSpeed;
 	ci::Path2d				mMask;
+	int32_t					mNumTouchPointsMax;
+	int32_t					mNumTouchPointsMin;
 	ci::vec2				mPan;
 	ci::vec2				mPanMax;
 	ci::vec2				mPanMin;
@@ -148,6 +155,7 @@ protected:
 	float					mTapThreshold;
 	void					resetTap();
 
+	bool					isEventValid( const ci::app::TouchEvent& event ) const;
 	float					wrapAngle( float v );
 };
  

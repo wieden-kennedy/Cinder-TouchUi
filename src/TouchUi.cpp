@@ -46,6 +46,8 @@ TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 {
 	mEnabled			= true;
 	mInterpolationSpeed	= 0.33f;
+	mNumTouchPointsMax	= numeric_limits<int32_t>::max();
+	mNumTouchPointsMin	= 1;
 	mPan				= vec2( 0.0f );
 	mPanTarget			= mPan;
 	mPanMax				= vec2( numeric_limits<float>::max() );
@@ -61,7 +63,7 @@ TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 	mScaleSpeed			= 0.0067f;
 	mScaleThreshold		= toPixels( 1.0f );
 	mTap				= false;
-	mTapDelay			= 0.05;
+	mTapDelay			= 0.07;
 	mTapPosition		= vec2( numeric_limits<float>::min() );
 	mTapTime			= 0.0;
 	mTapThreshold		= toPixels( 15.0f );
@@ -88,6 +90,8 @@ TouchUi& TouchUi::operator=( const TouchUi& rhs )
 	mEnabled			= rhs.mEnabled;
 	mInterpolationSpeed	= rhs.mInterpolationSpeed;
 	mMask				= rhs.mMask;
+	mNumTouchPointsMax	= rhs.mNumTouchPointsMax;
+	mNumTouchPointsMin	= rhs.mNumTouchPointsMin;
 	mPan				= rhs.mPan;
 	mPanSpeed			= rhs.mPanSpeed;
 	mPanTarget			= rhs.mPanTarget;
@@ -207,7 +211,6 @@ bool TouchUi::isTapped( bool clearTap )
 	return tap;
 }
 
-
 float TouchUi::getInterpolationSpeed() const
 {
 	return mInterpolationSpeed;
@@ -216,6 +219,16 @@ float TouchUi::getInterpolationSpeed() const
 const Path2d& TouchUi::getMask() const
 {
 	return mMask;
+}
+
+int32_t TouchUi::getNumTouchPointsMax() const
+{
+	return mNumTouchPointsMax;
+}
+
+int32_t TouchUi::getNumTouchPointsMin() const
+{
+	return mNumTouchPointsMin;
 }
 
 const vec2& TouchUi::getPanMax() const
@@ -307,6 +320,22 @@ void TouchUi::setMask( const vec2& center, float radius, size_t numSegments )
 		}
 	}
 	mMask.close();
+}
+
+void TouchUi::setNumTouchPoints( int32_t min, int32_t max )
+{
+	mNumTouchPointsMax = max;
+	mNumTouchPointsMin = min;
+}
+
+void TouchUi::setNumTouchPointsMax( int32_t v )
+{
+	mNumTouchPointsMax = v;
+}
+
+void TouchUi::setNumTouchPointsMin( int32_t v )
+{
+	mNumTouchPointsMin = v;
 }
 
 void TouchUi::setPan( const vec2& v )
@@ -418,6 +447,10 @@ void TouchUi::zero( bool pan, bool rotation, bool scale )
 
 void TouchUi::touchesBegan( TouchEvent& event )
 {
+	if ( !isEventValid( event ) ) {
+		return;
+	}
+
 	if ( event.getTouches().size() == 1 ) {
 		const vec2 tap = toPixels( event.getTouches().begin()->getPos() );
 		if ( mMask.contains( tap ) ) {
@@ -429,6 +462,10 @@ void TouchUi::touchesBegan( TouchEvent& event )
 
 void TouchUi::touchesEnded( app::TouchEvent& event )
 {
+	if ( !isEventValid( event ) ) {
+		return;
+	}
+
 	if ( mTapTime > 0.0 && event.getTouches().size() == 1 ) {
 		const vec2 tap( toPixels( event.getTouches().begin()->getPos() ) );
 		if ( mMask.contains( tap ) && glm::distance( tap, mTapPosition ) < mTapThreshold ) {
@@ -441,10 +478,12 @@ void TouchUi::touchesEnded( app::TouchEvent& event )
 
 void TouchUi::touchesMoved( app::TouchEvent& event )
 {
-	const vec2 panSpeed	= mPanSpeed * vec2( pow( ( mScaleMax + mScaleMin ) - mScale, 0.0002f ) );
-	
+	if ( !isEventValid( event ) ) {
+		return;
+	}
+
 	// End tap if multiple touches or location has moved too far
-	const size_t numTouches = event.getTouches().size();
+	const size_t numTouches = event.getTouches().size(); 
 	if ( numTouches > 1 ) {
 		resetTap();
 	} else {
@@ -454,6 +493,8 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 		}
 	}
 	
+	const vec2 panSpeed = mPanSpeed * vec2( pow( ( mScaleMax + mScaleMin ) - mScale, 0.0002f ) );
+
 	float panX		= 0.0f;
 	float panY		= 0.0f;
 	float scale		= 0.0f;
@@ -541,6 +582,18 @@ void TouchUi::resetTap()
 	mTap			= false;
 	mTapPosition	= vec2( numeric_limits<float>::min() );
 	mTapTime		= 0.0;
+}
+
+bool TouchUi::isEventValid( const app::TouchEvent& event ) const
+{
+	if ( !mEnabled ) {
+		return false;
+	}
+	const int32_t numTouches = (int32_t)event.getTouches().size();
+	if ( numTouches < mNumTouchPointsMin || numTouches > mNumTouchPointsMax ) {
+		return false;
+	}
+	return true;
 }
 
 float TouchUi::wrapAngle( float v )

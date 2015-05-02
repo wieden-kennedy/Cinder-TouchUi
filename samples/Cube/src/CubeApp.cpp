@@ -67,7 +67,7 @@ CubeApp::CubeApp()
 	mCamera.lookAt( vec3( 0.0f, 0.0f, 5.0f ), vec3( 0.0f ) );
 	
 	mTouchUi.connect( getWindow() );
-	mTouchUi.setScaleMin( 0.5f );
+	mTouchUi.setScaleMin( vec2( 0.5f ) );
 	
 	gl::enableDepthRead();
 	gl::enableDepthWrite();
@@ -80,7 +80,7 @@ void CubeApp::draw()
 	
 	gl::translate( mTouchUi.getPan() * vec2( 1.0f, -1.0f ) );
 	gl::rotate( mTouchUi.getRotation(), vec3( 1.0f ) );
-	gl::scale( vec3( mTouchUi.getScale() ) );
+	gl::scale( vec3( mTouchUi.getScale().x ) );
 	
 	gl::drawColorCube( vec3( 0.0f ), vec3( 1.0f ) );
 }

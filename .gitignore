@@ -1,0 +1,10 @@
+*.xcworkspace/
+xcuserdata/
+.DS_Store
+DerivedData/
+
+*.suo
+*.sdf
+Debug/
+Release/
+ipch/

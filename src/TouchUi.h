@@ -1,8 +1,46 @@
+/*
+*
+* Copyright (c) 2015, Wieden+Kennedy
+* Stephen Schieberl
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or
+* without modification, are permitted provided that the following
+* conditions are met:
+*
+* Redistributions of source code must retain the above copyright
+* notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright
+* notice, this list of conditions and the following disclaimer in
+* the documentation and/or other materials provided with the
+* distribution.
+*
+* Neither the name of the Ban the Rewind nor the names of its
+* contributors may be used to endorse or promote products
+* derived from this software without specific prior written
+* permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+* COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+* STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+* ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*
+*/
+
 #pragma once
 
-#include "cinder/Quaternion.h"
 #include "cinder/app/TouchEvent.h"
 #include "cinder/app/Window.h"
+#include "cinder/Quaternion.h"
+#include "cinder/Path2d.h"
 
 class TouchUi
 {
@@ -22,9 +60,13 @@ public:
 	const ci::vec2&			getPan() const;
 	float					getRotation() const;
 	float					getScale() const;
-	const ci::vec2&			getTapLocation() const;
+	const ci::vec2&			getTapPosition() const;
+	const ci::vec2			getTapPosition( bool clearTap );
+	bool					isTapped() const;
+	bool					isTapped( bool clearTap );
 	
 	float					getInterpolationSpeed() const;
+	const ci::Path2d&		getMask() const;
 	const ci::vec2&			getPanMax() const;
 	const ci::vec2&			getPanMin() const;
 	const ci::vec2&			getPanSpeed() const;
@@ -36,22 +78,27 @@ public:
 	float					getScaleSpeed() const;
 	float 					getScaleThreshold() const;
 	float					getTapThreshold() const;
-	bool					isTapped() const;
 
 	void					setInterpolationSpeed( float v );
+	void					setMask( const ci::Path2d& path );
+	void					setMask( const ci::Rectf& bounds );
+	void					setMask( const ci::vec2& center, float radius, size_t numSegments = 12 );
+	void					setPan( const ci::vec2& v );
 	void					setPanMax( const ci::vec2& v );
 	void					setPanMin( const ci::vec2& v );
 	void					setPanSpeed( const ci::vec2& v );
 	void					setPanThreshold( const ci::vec2& v );
+	void					setRotation( float v );
 	void 					setRotationSpeed( float v );
 	void 					setRotationThreshold( float v );
+	void					setScale( float v );
 	void					setScaleMax( float v );
 	void					setScaleMin( float v );
 	void					setScaleSpeed( float v );
 	void 					setScaleThreshold( float v );
 	void					setTapDelay( double v );
 	void					setTapThreshold( float v );
-	void					zero();
+	void					zero( bool pan = true, bool rotation = true, bool scale = true );
 protected:
 	enum : size_t
 	{
@@ -77,6 +124,7 @@ protected:
 	ci::app::WindowRef		mWindow;
 	
 	float					mInterpolationSpeed;
+	ci::Path2d				mMask;
 	ci::vec2				mPan;
 	ci::vec2				mPanMax;
 	ci::vec2				mPanMin;
@@ -95,8 +143,11 @@ protected:
 	float 					mScaleThreshold;
 	bool					mTap;
 	double					mTapDelay;
-	ci::vec2				mTapLocation;
+	ci::vec2				mTapPosition;
 	double					mTapTime;
 	float					mTapThreshold;
+	void					resetTap();
+
+	float					wrapAngle( float v );
 };
  

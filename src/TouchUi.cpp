@@ -1,3 +1,40 @@
+/*
+*
+* Copyright (c) 2015, Wieden+Kennedy
+* Stephen Schieberl
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or
+* without modification, are permitted provided that the following
+* conditions are met:
+*
+* Redistributions of source code must retain the above copyright
+* notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright
+* notice, this list of conditions and the following disclaimer in
+* the documentation and/or other materials provided with the
+* distribution.
+*
+* Neither the name of the Ban the Rewind nor the names of its
+* contributors may be used to endorse or promote products
+* derived from this software without specific prior written
+* permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+* COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+* STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+* ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*
+*/
+
 #include "TouchUi.h"
 #include "cinder/app/App.h"
 
@@ -13,7 +50,7 @@ TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 	mPanTarget			= mPan;
 	mPanMax				= vec2( numeric_limits<float>::max() );
 	mPanMin				= vec2( -numeric_limits<float>::max() );
-	mPanSpeed			= vec2( 0.0033f );
+	mPanSpeed			= vec2( 0.0067f );
 	mPanThreshold		= toPixels( vec2( 1.0f ) );
 	mRotationSpeed		= -2.5f;
 	mRotationThreshold	= 0.005f;
@@ -25,10 +62,13 @@ TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 	mScaleThreshold		= toPixels( 1.0f );
 	mTap				= false;
 	mTapDelay			= 0.05;
-	mTapLocation		= vec2( numeric_limits<float>::min() );
+	mTapPosition		= vec2( numeric_limits<float>::min() );
 	mTapTime			= 0.0;
 	mTapThreshold		= toPixels( 15.0f );
-	
+
+	if ( window != nullptr ) {
+		setMask( Area( ivec2( 0 ), window->getSize() ) );
+	}
 	connect( window, signalPriority );
 }
 
@@ -47,6 +87,7 @@ TouchUi& TouchUi::operator=( const TouchUi& rhs )
 {
 	mEnabled			= rhs.mEnabled;
 	mInterpolationSpeed	= rhs.mInterpolationSpeed;
+	mMask				= rhs.mMask;
 	mPan				= rhs.mPan;
 	mPanSpeed			= rhs.mPanSpeed;
 	mPanTarget			= rhs.mPanTarget;
@@ -62,7 +103,7 @@ TouchUi& TouchUi::operator=( const TouchUi& rhs )
 	mSignalPriority		= rhs.mSignalPriority;
 	mTap				= rhs.mTap;
 	mTapDelay			= rhs.mTapDelay;
-	mTapLocation		= rhs.mTapLocation;
+	mTapPosition		= rhs.mTapPosition;
 	mTapThreshold		= rhs.mTapThreshold;
 	mTapTime			= rhs.mTapTime;
 	mWindow				= rhs.mWindow;
@@ -90,6 +131,9 @@ void TouchUi::connect( const WindowRef& window, int signalPriority )
 			[ this ]( app::TouchEvent &event ) { touchesMoved( event ); } );
 		mConnectionUpdate = app::App::get()->getSignalUpdate().connect( signalPriority,
 			[ this ]() { update(); } );
+		if ( mMask.empty() ) {
+			setMask( Area( ivec2( 0 ), window->getSize() ) );
+		}
 	} else {
 		disconnect();
 	}
@@ -135,14 +179,43 @@ float TouchUi::getScale() const
 	return mScale;
 }
 
-const vec2& TouchUi::getTapLocation() const
+const vec2& TouchUi::getTapPosition() const
 {
-	return mTapLocation;
+	return mTapPosition;
 }
+
+const vec2 TouchUi::getTapPosition( bool clearTapPosition )
+{
+	vec2 tapPosition = mTapPosition;
+	if ( clearTapPosition ) {
+		resetTap();
+	}
+	return tapPosition;
+}
+
+bool TouchUi::isTapped() const
+{
+	return mTap;
+}
+
+bool TouchUi::isTapped( bool clearTap )
+{
+	bool tap = mTap;
+	if ( clearTap ) {
+		resetTap();
+	}
+	return tap;
+}
+
 
 float TouchUi::getInterpolationSpeed() const
 {
 	return mInterpolationSpeed;
+}
+
+const Path2d& TouchUi::getMask() const
+{
+	return mMask;
 }
 
 const vec2& TouchUi::getPanMax() const
@@ -200,14 +273,45 @@ float TouchUi::getTapThreshold() const
 	return mTapThreshold;
 }
 
-bool TouchUi::isTapped() const
-{
-	return mTap;
-}
-
 void TouchUi::setInterpolationSpeed( float v )
 {
 	mInterpolationSpeed = v;
+}
+
+void TouchUi::setMask( const Path2d& path )
+{
+	mMask = path;
+}
+
+void TouchUi::setMask( const Rectf& bounds )
+{
+	mMask.clear();
+	mMask.moveTo( toPixels( bounds.getUpperLeft() ) );
+	mMask.lineTo( toPixels( bounds.getUpperRight() ) );
+	mMask.lineTo( toPixels( bounds.getLowerRight() ) );
+	mMask.lineTo( toPixels( bounds.getLowerLeft() ) );
+	mMask.close();
+}
+
+void TouchUi::setMask( const vec2& center, float radius, size_t numSegments )
+{
+	mMask.clear();
+	float t			= 0.0f;
+	const float d	= ( 1.0f / (float)numSegments ) * (float)M_PI * 2.0f;
+	for ( size_t i = 0; i < numSegments; ++i, t += d ) {
+		vec2 v = toPixels( center + vec2( glm::cos( t ), glm::sin( t ) ) * radius );
+		if ( i == 0 ) {
+			mMask.moveTo( v );
+		} else {
+			mMask.lineTo( v );
+		}
+	}
+	mMask.close();
+}
+
+void TouchUi::setPan( const vec2& v )
+{
+	mPanTarget = v;
 }
 
 void TouchUi::setPanMax( const vec2& v )
@@ -242,6 +346,11 @@ void TouchUi::setPanThreshold( const vec2& v )
 	mPanThreshold = v;
 }
 
+void TouchUi::setRotation( float v )
+{
+	mRotationTarget.z = wrapAngle( v );
+}
+
 void TouchUi::setRotationSpeed( float v )
 {
 	mRotationSpeed = v;
@@ -250,6 +359,11 @@ void TouchUi::setRotationSpeed( float v )
 void TouchUi::setRotationThreshold( float v )
 {
 	mRotationThreshold = v;
+}
+
+void TouchUi::setScale( float v )
+{
+	mScaleTarget = v;
 }
 
 void TouchUi::setScaleMax( float v )
@@ -288,30 +402,38 @@ void TouchUi::setTapThreshold( float v )
 	mTapThreshold = v;
 }
 
-void TouchUi::zero()
+void TouchUi::zero( bool pan, bool rotation, bool scale )
 {
-	mPanTarget		= vec2( 0.0f );
-	mRotationTarget	= quat();
-	mScaleTarget	= 1.0;
-	mTapLocation	= vec2( numeric_limits<float>::min() );
-	mTapTime		= 0.0;
+	if ( pan ) {
+		setPan( vec2( 0.0f ) );
+	}
+	if ( rotation ) {
+		setRotation( 0.0f );
+	}
+	if ( scale ) {
+		setScale( 1.0 );
+	}
+	resetTap();
 }
 
 void TouchUi::touchesBegan( TouchEvent& event )
 {
 	if ( event.getTouches().size() == 1 ) {
-		mTapLocation	= toPixels( event.getTouches().begin()->getPos() );
-		mTapTime		= app::App::get()->getElapsedSeconds();
+		const vec2 tap = toPixels( event.getTouches().begin()->getPos() );
+		if ( mMask.contains( tap ) ) {
+			mTapPosition	= tap;
+			mTapTime		= app::App::get()->getElapsedSeconds();
+		}
 	}
 }
 
 void TouchUi::touchesEnded( app::TouchEvent& event )
 {
 	if ( mTapTime > 0.0 && event.getTouches().size() == 1 ) {
-		vec2 tap( toPixels( event.getTouches().begin()->getPos() ) );
-		if ( glm::distance( tap, mTapLocation ) < mTapThreshold ) {
+		const vec2 tap( toPixels( event.getTouches().begin()->getPos() ) );
+		if ( mMask.contains( tap ) && glm::distance( tap, mTapPosition ) < mTapThreshold ) {
 			mTap			= true;
-			mTapLocation	= tap;
+			mTapPosition	= tap;
 			mTapTime		= app::App::get()->getElapsedSeconds();
 		}
 	}
@@ -319,20 +441,16 @@ void TouchUi::touchesEnded( app::TouchEvent& event )
 
 void TouchUi::touchesMoved( app::TouchEvent& event )
 {
-	const vec2 panSpeed			= mPanSpeed * vec2( pow( ( mScaleMax + mScaleMin ) - mScale, 0.0002f ) );
-	static const float pi		= (float)M_PI;
-	static const float twoPi	= pi * 2.0f;
+	const vec2 panSpeed	= mPanSpeed * vec2( pow( ( mScaleMax + mScaleMin ) - mScale, 0.0002f ) );
 	
 	// End tap if multiple touches or location has moved too far
-	size_t numTouches = event.getTouches().size();
+	const size_t numTouches = event.getTouches().size();
 	if ( numTouches > 1 ) {
-		mTapLocation	= vec2( numeric_limits<float>::min() );
-		mTapTime		= 0.0;
+		resetTap();
 	} else {
-		vec2 tap( toPixels( event.getTouches().begin()->getPos() ) );
-		if ( glm::distance( tap, mTapLocation ) > mTapThreshold ) {
-			mTapLocation	= vec2( numeric_limits<float>::min() );
-			mTapTime		= 0.0;
+		const vec2 tap( toPixels( event.getTouches().begin()->getPos() ) );
+		if ( !mMask.contains( tap ) || glm::distance( tap, mTapPosition ) > mTapThreshold ) {
+			resetTap();
 		}
 	}
 	
@@ -346,8 +464,10 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 		const TouchEvent::Touch& touch = *event.getTouches().begin();
 		const vec2 a( toPixels( touch.getPos() ) );
 		const vec2 b( toPixels( touch.getPrevPos() ) );
-		panX = a.x - b.x;
-		panY = a.y - b.y;
+		if ( mMask.contains( b ) ) {
+			panX = a.x - b.x;
+			panY = a.y - b.y;
+		}
 	}
 	
 	if ( numTouches > 1 ) {
@@ -357,21 +477,18 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 		const vec2 ap1( toPixels( a.getPrevPos() ) );
 		const vec2 bp0( toPixels( b.getPos() ) );
 		const vec2 bp1( toPixels( b.getPrevPos() ) );
-		
-		// Scale
-		float d0	= glm::distance( ap0, bp0 );
-		float d1	= glm::distance( ap1, bp1 );
-		scale		= d0 - d1;
-		
-		// Rotation
-		float a0 = atan2( ap0.y - bp0.y, ap0.x - bp0.x );
-		float a1 = atan2( ap1.y - bp1.y, ap1.x - bp1.x );
-		rotation = a0 - a1;
-		rotation = fmod( rotation + pi, twoPi );
-		if ( rotation < 0.0f ) {
-			rotation += twoPi;
+		if ( mMask.contains( bp0 ) && mMask.contains( bp1 ) ) {
+
+			// Scale
+			float d0 = glm::distance( ap0, bp0 );
+			float d1 = glm::distance( ap1, bp1 );
+			scale = d0 - d1;
+
+			// Rotation
+			float a0 = atan2( ap0.y - bp0.y, ap0.x - bp0.x );
+			float a1 = atan2( ap1.y - bp1.y, ap1.x - bp1.x );
+			rotation = wrapAngle( a0 - a1 );
 		}
-		rotation -= pi;
 	}
 	
 	// Sort motions
@@ -415,8 +532,26 @@ void TouchUi::update()
 	mScale			= glm::mix( mScale, mScaleTarget, mInterpolationSpeed );
 	
 	if ( mTapTime > 0.0 && ( app::App::get()->getElapsedSeconds() - mTapTime ) > mTapDelay ) {
-		mTap			= false;
-		mTapLocation	= vec2( numeric_limits<float>::min() );
-		mTapTime		= 0.0;
+		resetTap();
 	}
+}
+
+void TouchUi::resetTap()
+{
+	mTap			= false;
+	mTapPosition	= vec2( numeric_limits<float>::min() );
+	mTapTime		= 0.0;
+}
+
+float TouchUi::wrapAngle( float v )
+{
+	static const float pi		= (float)M_PI;
+	static const float twoPi	= pi * 2.0f;
+
+	v = fmod( v + pi, twoPi );
+	if ( v < 0.0f ) {
+		v += twoPi;
+	}
+	v -= pi;
+	return v;
 }

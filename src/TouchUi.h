@@ -59,7 +59,7 @@ public:
 	
 	const ci::vec2&			getPan() const;
 	float					getRotation() const;
-	float					getScale() const;
+	const ci::vec2&			getScale() const;
 	const ci::vec2&			getTapPosition() const;
 	const ci::vec2			getTapPosition( bool clearTap );
 	bool					isTapped() const;
@@ -75,12 +75,15 @@ public:
 	const ci::vec2&			getPanThreshold() const;
 	float 					getRotationSpeed() const;
 	float 					getRotationThreshold() const;
-	float					getScaleMax() const;
-	float					getScaleMin() const;
-	float					getScaleSpeed() const;
-	float 					getScaleThreshold() const;
+	const ci::vec2&			getScaleMax() const;
+	const ci::vec2&			getScaleMin() const;
+	const ci::vec2&			getScaleSpeed() const;
+	const ci::vec2& 		getScaleThreshold() const;
 	float					getTapThreshold() const;
+	bool					isScaleSymmetryEnabled() const;
 
+	void					disableScaleSymmetry();
+	void					enableScaleSymmetry( bool enable = true );
 	void					setInterpolationSpeed( float v );
 	void					setMask( const ci::Path2d& path );
 	void					setMask( const ci::Rectf& bounds );
@@ -96,11 +99,11 @@ public:
 	void					setRotation( float v );
 	void 					setRotationSpeed( float v );
 	void 					setRotationThreshold( float v );
-	void					setScale( float v );
-	void					setScaleMax( float v );
-	void					setScaleMin( float v );
-	void					setScaleSpeed( float v );
-	void 					setScaleThreshold( float v );
+	void					setScale( const ci::vec2& v );
+	void					setScaleMax( const ci::vec2& v );
+	void					setScaleMin( const ci::vec2& v );
+	void					setScaleSpeed( const ci::vec2& v );
+	void 					setScaleThreshold( const ci::vec2& v );
 	void					setTapDelay( double v );
 	void					setTapThreshold( float v );
 	void					zero( bool pan = true, bool rotation = true, bool scale = true );
@@ -110,7 +113,8 @@ protected:
 		MotionType_PanX,
 		MotionType_PanY,
 		MotionType_Rotation,
-		MotionType_Scale
+		MotionType_ScaleX, 
+		MotionType_ScaleY
 	} typedef MotionType;
 	typedef std::pair<MotionType, float> Motion;
 	
@@ -142,12 +146,13 @@ protected:
 	float 					mRotationSpeed;
 	ci::quat				mRotationTarget;
 	float 					mRotationThreshold;
-	float					mScale;
-	float					mScaleMax;
-	float					mScaleMin;
-	float					mScaleSpeed;
-	float					mScaleTarget;
-	float 					mScaleThreshold;
+	ci::vec2				mScale;
+	ci::vec2				mScaleMax;
+	ci::vec2				mScaleMin;
+	ci::vec2				mScaleSpeed;
+	bool					mScaleSymmetry;
+	ci::vec2				mScaleTarget;
+	ci::vec2 				mScaleThreshold;
 	bool					mTap;
 	double					mTapDelay;
 	ci::vec2				mTapPosition;

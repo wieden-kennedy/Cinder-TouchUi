@@ -49,19 +49,20 @@ TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 	mNumTouchPointsMax	= numeric_limits<int32_t>::max();
 	mNumTouchPointsMin	= 1;
 	mPan				= vec2( 0.0f );
-	mPanTarget			= mPan;
 	mPanMax				= vec2( numeric_limits<float>::max() );
 	mPanMin				= vec2( -numeric_limits<float>::max() );
 	mPanSpeed			= vec2( 0.0067f );
+	mPanTarget			= mPan;
 	mPanThreshold		= toPixels( vec2( 1.0f ) );
 	mRotationSpeed		= -2.5f;
 	mRotationThreshold	= 0.005f;
-	mScale				= 1.0f;
+	mScale				= vec2( 1.0f );
+	mScaleMax			= vec2( numeric_limits<float>::max() );
+	mScaleMin			= vec2( 0.0f );
+	mScaleSpeed			= vec2( 0.0067f );
+	mScaleSymmetry		= true;
 	mScaleTarget		= mScale;
-	mScaleMax			= numeric_limits<float>::max();
-	mScaleMin			= 0.0f;
-	mScaleSpeed			= 0.0067f;
-	mScaleThreshold		= toPixels( 1.0f );
+	mScaleThreshold		= toPixels( vec2( 1.0f ) );
 	mTap				= false;
 	mTapDelay			= 0.07;
 	mTapPosition		= vec2( numeric_limits<float>::min() );
@@ -102,6 +103,7 @@ TouchUi& TouchUi::operator=( const TouchUi& rhs )
 	mRotationThreshold	= rhs.mRotationThreshold;
 	mScale				= rhs.mScale;
 	mScaleSpeed			= rhs.mScaleSpeed;
+	mScaleSymmetry		= rhs.mScaleSymmetry;
 	mScaleTarget		= rhs.mScaleTarget;
 	mScaleThreshold		= rhs.mScaleThreshold;
 	mSignalPriority		= rhs.mSignalPriority;
@@ -178,7 +180,7 @@ float TouchUi::getRotation() const
 	return mRotation.z;
 }
 
-float TouchUi::getScale() const
+const vec2& TouchUi::getScale() const
 {
 	return mScale;
 }
@@ -261,22 +263,22 @@ float TouchUi::getRotationThreshold() const
 	return mRotationThreshold;
 }
 
-float TouchUi::getScaleMax() const
+const vec2& TouchUi::getScaleMax() const
 {
 	return mScaleMax;
 }
 
-float TouchUi::getScaleMin() const
+const vec2& TouchUi::getScaleMin() const
 {
 	return mScaleMin;
 }
 
-float TouchUi::getScaleSpeed() const
+const vec2& TouchUi::getScaleSpeed() const
 {
 	return mScaleSpeed;
 }
 
-float TouchUi::getScaleThreshold() const
+const vec2& TouchUi::getScaleThreshold() const
 {
 	return mScaleThreshold;
 }
@@ -284,6 +286,21 @@ float TouchUi::getScaleThreshold() const
 float TouchUi::getTapThreshold() const
 {
 	return mTapThreshold;
+}
+
+bool TouchUi::isScaleSymmetryEnabled() const
+{
+	return mScaleSymmetry;
+}
+
+void TouchUi::disableScaleSymmetry()
+{
+	mScaleSymmetry = false;
+}
+
+void TouchUi::enableScaleSymmetry( bool enable )
+{
+	mScaleSymmetry = enable;
 }
 
 void TouchUi::setInterpolationSpeed( float v )
@@ -390,33 +407,39 @@ void TouchUi::setRotationThreshold( float v )
 	mRotationThreshold = v;
 }
 
-void TouchUi::setScale( float v )
+void TouchUi::setScale( const vec2& v )
 {
 	mScaleTarget = v;
 }
 
-void TouchUi::setScaleMax( float v )
+void TouchUi::setScaleMax( const vec2& v )
 {
 	mScaleMax = v;
-	if ( mScaleMin > mScaleMax ) {
-		swap( mScaleMin, mScaleMax );
+	if ( mScaleMin.x > mScaleMax.x ) {
+		swap( mScaleMin.x, mScaleMax.x );
+	}
+	if ( mScaleMin.y > mScaleMax.y ) {
+		swap( mScaleMin.y, mScaleMax.y );
 	}
 }
 
-void TouchUi::setScaleMin( float v )
+void TouchUi::setScaleMin( const vec2& v )
 {
 	mScaleMin = v;
-	if ( mScaleMin > mScaleMax ) {
-		swap( mScaleMin, mScaleMax );
+	if ( mScaleMin.x > mScaleMax.x ) {
+		swap( mScaleMin.x, mScaleMax.x );
+	}
+	if ( mScaleMin.y > mScaleMax.y ) {
+		swap( mScaleMin.y, mScaleMax.y );
 	}
 }
 
-void TouchUi::setScaleSpeed( float v )
+void TouchUi::setScaleSpeed( const vec2& v )
 {
 	mScaleSpeed = v;
 }
 
-void TouchUi::setScaleThreshold( float v )
+void TouchUi::setScaleThreshold( const vec2& v )
 {
 	mScaleThreshold = v;
 }
@@ -440,7 +463,7 @@ void TouchUi::zero( bool pan, bool rotation, bool scale )
 		setRotation( 0.0f );
 	}
 	if ( scale ) {
-		setScale( 1.0 );
+		setScale( vec2( 1.0f ) );
 	}
 	resetTap();
 }
@@ -493,14 +516,17 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 		}
 	}
 	
-	const vec2 panSpeed = mPanSpeed * vec2( pow( ( mScaleMax + mScaleMin ) - mScale, 0.0002f ) );
+	const vec2 panSpeed( 
+		mPanSpeed.x * pow( ( mScaleMax.x + mScaleMin.x ) - mScale.x, 0.0002f ), 
+		mPanSpeed.y * pow( ( mScaleMax.y + mScaleMin.y ) - mScale.y, 0.0002f ) );
 
 	float panX		= 0.0f;
 	float panY		= 0.0f;
-	float scale		= 0.0f;
+	float scaleX	= 0.0f;
+	float scaleY	= 0.0f;
 	float rotation	= 0.0f;
 
-	// Single-touch pan
+	// Pan
 	if ( numTouches > 0 ) {
 		const TouchEvent::Touch& touch = *event.getTouches().begin();
 		const vec2 a( toPixels( touch.getPos() ) );
@@ -522,9 +548,13 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 		if ( mMask.contains( bp0 ) && mMask.contains( bp1 ) ) {
 
 			// Scale
-			float d0 = glm::distance( ap0, bp0 );
-			float d1 = glm::distance( ap1, bp1 );
-			scale = d0 - d1;
+			float dx0 = glm::distance( ap0.x, bp0.x );
+			float dx1 = glm::distance( ap1.x, bp1.x );
+			scaleX = dx0 - dx1;
+
+			float dy0 = glm::distance( ap0.y, bp0.y );
+			float dy1 = glm::distance( ap1.y, bp1.y );
+			scaleY = dy0 - dy1;
 
 			// Rotation
 			float a0 = atan2( ap0.y - bp0.y, ap0.x - bp0.x );
@@ -538,7 +568,8 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 		{ MotionType_PanX,		abs( panX ) / mPanThreshold.x },
 		{ MotionType_PanY,		abs( panY ) / mPanThreshold.y },
 		{ MotionType_Rotation,	abs( rotation ) / mRotationThreshold },
-		{ MotionType_Scale,		abs( scale ) / mScaleThreshold },
+		{ MotionType_ScaleX,	abs( scaleX ) / mScaleThreshold.x },
+		{ MotionType_ScaleY,	abs( scaleY ) / mScaleThreshold.y },
 	};
 	sort( motions.begin(), motions.end(), []( const Motion& a, const Motion& b ) -> bool
 	{
@@ -557,8 +588,12 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 			case MotionType_Rotation:
 				mRotationTarget.z	+= rotation * mRotationSpeed;
 				break;
-			case MotionType_Scale:
-				mScaleTarget		+= scale * mScaleSpeed;
+			default:
+				if ( mScaleSymmetry ) {
+					mScaleTarget	+= vec2( ( scaleX * mScaleSpeed.x + scaleY * mScaleSpeed.y ) * 0.5f );
+				} else {
+					mScaleTarget	+= vec2( scaleX * mScaleSpeed.x, scaleY * mScaleSpeed.y );
+				}
 				break;
 		}
 	}

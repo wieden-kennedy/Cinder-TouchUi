@@ -67,7 +67,8 @@ SquareApp::SquareApp()
 	mRect = Rectf( v0, v1 );
 
 	mTouchUi.connect( getWindow() );
-	mTouchUi.setScaleMin( 0.5f );
+	mTouchUi.disableScaleSymmetry();
+	mTouchUi.setScaleMin( vec2( 0.75f ) );
 	mTouchUi.setMask( mRect );
 	mTouchUi.setPanSpeed( vec2( 1.333f ) );
 	mTouchUi.setScaleSpeed( mTouchUi.getScaleSpeed() * 3.0f );

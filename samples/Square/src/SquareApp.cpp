@@ -86,17 +86,17 @@ void SquareApp::draw()
 
 void SquareApp::update()
 {
-	mat4 m( 1.0f );
-	m = glm::translate( m, vec3( mTouchUi.getPan(), 0.0f ) );
-	m = glm::translate( m, vec3( mRect.getCenter(), 0.0f ) );
-	m = glm::rotate( m, mTouchUi.getRotation(), vec3( 0.0f, 0.0f, -1.0f ) );
-	m = glm::scale( m, vec3( mTouchUi.getScale() ) );
-	m = glm::translate( m, -vec3( mRect.getCenter(), 0.0f ) );
+	mat3 m( 1.0f );
+	m = glm::translate( m, mTouchUi.getPan() );
+	m = glm::translate( m, mRect.getCenter() );
+	m = glm::rotate( m, -mTouchUi.getRotation() );
+	m = glm::scale( m, vec2( mTouchUi.getScale() ) );
+	m = glm::translate( m, -mRect.getCenter() );
 
-	vec2 v0 = vec2( m * vec4( mRect.getUpperLeft(),		0.0f, 1.0f ) );
-	vec2 v1 = vec2( m * vec4( mRect.getUpperRight(),	0.0f, 1.0f ) );
-	vec2 v2 = vec2( m * vec4( mRect.getLowerRight(),	0.0f, 1.0f ) );
-	vec2 v3 = vec2( m * vec4( mRect.getLowerLeft(),		0.0f, 1.0f ) );
+	vec2 v0 = vec2( m * vec3( mRect.getUpperLeft(),		1.0f ) );
+	vec2 v1 = vec2( m * vec3( mRect.getUpperRight(),	1.0f ) );
+	vec2 v2 = vec2( m * vec3( mRect.getLowerRight(),	1.0f ) );
+	vec2 v3 = vec2( m * vec3( mRect.getLowerLeft(),		1.0f ) );
 	
 	Path2d path;
 	path.moveTo( v0 );

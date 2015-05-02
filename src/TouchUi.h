@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cinder/Quaternion.h"
 #include "cinder/app/TouchEvent.h"
 #include "cinder/app/Window.h"
 

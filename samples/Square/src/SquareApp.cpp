@@ -93,16 +93,11 @@ void SquareApp::update()
 	m = glm::scale( m, vec2( mTouchUi.getScale() ) );
 	m = glm::translate( m, -mRect.getCenter() );
 
-	vec2 v0 = vec2( m * vec3( mRect.getUpperLeft(),		1.0f ) );
-	vec2 v1 = vec2( m * vec3( mRect.getUpperRight(),	1.0f ) );
-	vec2 v2 = vec2( m * vec3( mRect.getLowerRight(),	1.0f ) );
-	vec2 v3 = vec2( m * vec3( mRect.getLowerLeft(),		1.0f ) );
-	
 	Path2d path;
-	path.moveTo( v0 );
-	path.lineTo( v1 );
-	path.lineTo( v2 );
-	path.lineTo( v3 );
+	path.moveTo( vec2( m * vec3( mRect.getUpperLeft(),	1.0f ) ) );
+	path.lineTo( vec2( m * vec3( mRect.getUpperRight(), 1.0f ) ) );
+	path.lineTo( vec2( m * vec3( mRect.getLowerRight(), 1.0f ) ) );
+	path.lineTo( vec2( m * vec3( mRect.getLowerLeft(),	1.0f ) ) );
 	path.close();
 
 	mTouchUi.setMask( path );

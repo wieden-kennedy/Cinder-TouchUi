@@ -36,21 +36,19 @@
 */
 
 #include "cinder/app/App.h"
-#include "cinder/Camera.h"
 
 #include "TouchUI.h"
 
-class CubeApp : public ci::app::App
+class SquareApp : public ci::app::App
 {
 public:
-	CubeApp();
+	SquareApp();
 
-	void			draw() override;
-	void			resize() override;
-	void			update() override;
+	void		draw() override;
+	void		update() override;
 private:
-	ci::CameraPersp	mCamera;
-	TouchUi			mTouchUi;
+	ci::Rectf	mRect;
+	TouchUi		mTouchUi;
 };
 
 #include "cinder/app/RendererGl.h"
@@ -61,43 +59,56 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-CubeApp::CubeApp()
+SquareApp::SquareApp()
 {
-	mCamera = CameraPersp( getWindowWidth(), getWindowHeight(), 45.0f, 0.01f, 100.0f );
-	mCamera.lookAt( vec3( 0.0f, 0.0f, 5.0f ), vec3( 0.0f ) );
-	
+	vec2 c	= getWindowCenter();
+	vec2 v0 = c + vec2( -100.0f );
+	vec2 v1 = c + vec2( 100.0f );
+	mRect = Rectf( v0, v1 );
+
 	mTouchUi.connect( getWindow() );
 	mTouchUi.setScaleMin( 0.5f );
+	mTouchUi.setMask( mRect );
+	mTouchUi.setPanSpeed( vec2( 1.333f ) );
+	mTouchUi.setScaleSpeed( mTouchUi.getScaleSpeed() * 3.0f );
 	
 	gl::enableDepthRead();
 	gl::enableDepthWrite();
 }
 
-void CubeApp::draw()
+void SquareApp::draw()
 {
 	gl::clear();
-	gl::setMatrices( mCamera );
+	gl::setMatricesWindow( getWindowSize() );
 	
-	gl::translate( mTouchUi.getPan() * vec2( 1.0f, -1.0f ) );
-	gl::rotate( mTouchUi.getRotation(), vec3( 1.0f ) );
-	gl::scale( vec3( mTouchUi.getScale() ) );
+	gl::draw( mTouchUi.getMask() );
+}
+
+void SquareApp::update()
+{
+	mat4 m( 1.0f );
+	m = glm::translate( m, vec3( mTouchUi.getPan(), 0.0f ) );
+	m = glm::translate( m, vec3( mRect.getCenter(), 0.0f ) );
+	m = glm::rotate( m, mTouchUi.getRotation(), vec3( 0.0f, 0.0f, -1.0f ) );
+	m = glm::scale( m, vec3( mTouchUi.getScale() ) );
+	m = glm::translate( m, -vec3( mRect.getCenter(), 0.0f ) );
+
+	vec2 v0 = vec2( m * vec4( mRect.getUpperLeft(),		0.0f, 1.0f ) );
+	vec2 v1 = vec2( m * vec4( mRect.getUpperRight(),	0.0f, 1.0f ) );
+	vec2 v2 = vec2( m * vec4( mRect.getLowerRight(),	0.0f, 1.0f ) );
+	vec2 v3 = vec2( m * vec4( mRect.getLowerLeft(),		0.0f, 1.0f ) );
 	
-	gl::drawColorCube( vec3( 0.0f ), vec3( 1.0f ) );
+	Path2d path;
+	path.moveTo( v0 );
+	path.lineTo( v1 );
+	path.lineTo( v2 );
+	path.lineTo( v3 );
+	path.close();
+
+	mTouchUi.setMask( path );
 }
 
-void CubeApp::resize()
-{
-	mTouchUi.setMask( getWindowBounds() );
-}
-
-void CubeApp::update()
-{
-	if ( mTouchUi.isTapped() ) {
-		CI_LOG_V( mTouchUi.getTapPosition( true ) );
-	}
-}
-
-CINDER_APP( CubeApp, RendererGl, []( App::Settings* settings )
+CINDER_APP( SquareApp, RendererGl, []( App::Settings* settings )
 {
 	settings->setHighDensityDisplayEnabled( true );
 	settings->setMultiTouchEnabled( true );

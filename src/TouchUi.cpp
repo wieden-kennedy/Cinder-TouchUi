@@ -500,7 +500,7 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 	float scale		= 0.0f;
 	float rotation	= 0.0f;
 
-	// Pan
+	// Single-touch pan
 	if ( numTouches > 0 ) {
 		const TouchEvent::Touch& touch = *event.getTouches().begin();
 		const vec2 a( toPixels( touch.getPos() ) );
@@ -511,7 +511,8 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 		}
 	}
 	
-	if ( numTouches > 1 ) {
+	// Multi-touch
+	if ( numTouches > 1 && mNumTouchPointsMax > 1 ) {
 		const TouchEvent::Touch& a = *event.getTouches().begin();
 		const TouchEvent::Touch& b = *( event.getTouches().begin() + 1 );
 		const vec2 ap0( toPixels( a.getPos() ) );
@@ -548,16 +549,16 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 	if ( motions.begin()->second > 1.0f ) {
 		switch ( motions.begin()->first ) {
 			case MotionType_PanX:
-				mPanTarget.x	+= panX * panSpeed.x;
+				mPanTarget.x		+= panX * panSpeed.x;
 				break;
 			case MotionType_PanY:
-				mPanTarget.y	+= panY * panSpeed.y;
+				mPanTarget.y		+= panY * panSpeed.y;
 				break;
 			case MotionType_Rotation:
-				mRotationTarget = glm::rotate( mRotationTarget, rotation * mRotationSpeed, vec3( 0.0f, 0.0f, 1.0f ) );
+				mRotationTarget.z	+= rotation * mRotationSpeed;
 				break;
 			case MotionType_Scale:
-				mScaleTarget	+= scale * mScaleSpeed;
+				mScaleTarget		+= scale * mScaleSpeed;
 				break;
 		}
 	}

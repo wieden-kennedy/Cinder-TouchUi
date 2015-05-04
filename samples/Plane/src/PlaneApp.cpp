@@ -79,8 +79,9 @@ PlaneApp::PlaneApp()
 	mTouchUiTwo.setNumTouchPoints( 2, 2 );
 	mTouchUiTwo.setPanSpeed( vec2( 0.01f ) );
 	mTouchUiTwo.setScaleMin( vec2( 0.5f ) );
+	mTouchUiTwo.setScaleSpeed( vec2( 0.01f ) );
 	
-	mPlane = gl::VboMesh::create( geom::WirePlane().subdivisions( ivec2( 128, 128 ) ) );
+	mPlane = gl::VboMesh::create( geom::WirePlane().subdivisions( ivec2( 32, 32 ) ) );
 	
 	gl::enableDepthRead();
 	gl::enableDepthWrite();

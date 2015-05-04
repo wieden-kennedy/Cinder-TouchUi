@@ -68,6 +68,7 @@ CubeApp::CubeApp()
 	mCamera.lookAt( vec3( 0.0f, 0.0f, 5.0f ), vec3( 0.0f ) );
 	
 	mTouchUi.connect( getWindow() );
+	mTouchUi.setPanSpeed( vec2( 0.0067f ) );
 	mTouchUi.setScaleMin( vec2( 0.5f ) );
 	
 	mCube = gl::VboMesh::create( geom::WireCube() );

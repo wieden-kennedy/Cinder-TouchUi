@@ -45,89 +45,213 @@
 class TouchUi
 {
 public:
+	// Creates a TouchUi which connects to \a window touch events with
+	// \a signalPriority.
 	TouchUi( const ci::app::WindowRef& window = nullptr, int signalPriority = 0 );
+	// Creates a TouchUi from \a &rhs.
 	TouchUi( const TouchUi &rhs );
 	~TouchUi();
 
+	// Copies a TouchUi from \a &rhs.
 	TouchUi&				operator=( const TouchUi& rhs );
 
+	// Connects to \a window touch events with \a signalPriority. If no
+	// interactive mask exists, one will be created at the size of the window.
 	void					connect( const ci::app::WindowRef& window, int signalPriority = 0 );
+	// Disconnects from window's touch events.
 	void					disconnect();
 
+	// Set \a enable to true to enable touch event processing.
+	// Default is true.
 	void					enable( bool enable = true );
+	// Disables touch event processing.
 	void					disable();
+	// Returns true if touch event processing is enabled.
 	bool					isEnabled() const;
 
+	// Set \a enable to true to contrain interaction to one motion
+	// at a time (pan, rotation, or scale). Default is true.
 	void					enableConstrainMotion( bool enable = true );
+	// Disables motion contraint
 	void					disableConstrainMotion();
+	// Return true if
 	bool					isConstrainMotionEnabled() const;
 
+	// Set \a enable to true to enable pan motion. Default is true.
 	void					enablePan( bool enable = true );
+	// Disables pan motion.
 	void					disablePan();
+	// Returns true if pan motion is enabled.
 	bool					isPanEnabled() const;
+	
+	// Set \a enable to true to enable rotate motion. Default is true.
 	void					enableRotation( bool enable = true );
+	// Disables rotate motion.
 	void					disableRotation();
+	// Returns true if rotate motion is enabled.
 	bool					isRotationEnabled() const;
+	
+	// Set \a enable to true to enable scale motion. Default is true.
 	void					enableScale( bool enable = true );
+	// Disables scale motion.
 	void					disableScale();
+	// Returns true if scale motion is enabled.
 	bool					isScaleEnabled() const;
+	
+	// Set \a enable to true to enable tap gesture. Default is true.
 	void					enableTap( bool enable = true );
+	// Disables tap gesture.
 	void					disableTap();
+	// Returns true if tap gesture is enabled.
 	bool					isTapEnabled() const;
 
+	// Returns pan position in pixels.
 	const ci::vec2&			getPan() const;
+	// Return rotation angle in radians.
 	float					getRotation() const;
+	// Returns scale.
 	const ci::vec2&			getScale() const;
+	
+	// Returns location of tap gesture in pixels.
 	const ci::vec2&			getTapPosition() const;
+	// Returns location of tap gesture in pixels. Set \a clearTap to true
+	// reset tap data.
 	const ci::vec2			getTapPosition( bool clearTap );
+	// Returns true if a tap gesture has occurred.
 	bool					isTapped() const;
+	// Returns true if a tap gesture has occurred. Set \a clearTap
+	// to true reset tap data.
 	bool					isTapped( bool clearTap );
 	
+	// Returns interpolation speed. This is rate at which motion updates.
 	float					getInterpolationSpeed() const;
+	// Returns Path2d representing interactive mask.
 	const ci::Path2d&		getMask() const;
+	// Return maximum number of touchpoints allowed.
 	int32_t					getNumTouchPointsMax() const;
+	// Return minimum number of touchpoints required.
 	int32_t					getNumTouchPointsMin() const;
+	
+	// Returns maximum pan position allowed in pixels.
 	const ci::vec2&			getPanMax() const;
+	// Returns minimum pan position allowed in pixels.
 	const ci::vec2&			getPanMin() const;
+	// Returns pan speed in pixels.
 	const ci::vec2&			getPanSpeed() const;
+	// Returns pan motion's minimum movement threshold in pixels.
 	const ci::vec2&			getPanThreshold() const;
+	
+	// Returns rotation speed in radians.
 	float 					getRotationSpeed() const;
+	// Returns rotation's minimum angle threshold in radians.
 	float 					getRotationThreshold() const;
+	
+	// Returns maximum scale allowed.
 	const ci::vec2&			getScaleMax() const;
+	// Returns minimum scale allowed.
 	const ci::vec2&			getScaleMin() const;
+	// Returns scale speed.
 	const ci::vec2&			getScaleSpeed() const;
+	// Returns scale motion's minimum movement threshold in pixels.
 	const ci::vec2& 		getScaleThreshold() const;
+	
+	// Returns time in seconds before a tap gesture is reset.
+	double					getTapDelay() const;
+	// Returns maximum offset in pixels from touch to lift to qualify a tap.
 	float					getTapThreshold() const;
+	
+	// Returns true if scale is always symmetrical (both axes scale evenly)
 	bool					isScaleSymmetryEnabled() const;
 
+	// Disables symmetrical scale. Each axis scales independently.
 	void					disableScaleSymmetry();
+	// Enables symmetrical scaling. Both axes scales evenly. Default is true.
 	void					enableScaleSymmetry( bool enable = true );
-	void					setInterpolationSpeed( float v );
-	void					setMask( const ci::Path2d& path );
-	void					setMask( const ci::Rectf& bounds );
-	void					setMask( const ci::vec2& center, float radius, size_t numSegments = 12 );
-	void					setNumTouchPoints( int32_t min, int32_t max );
-	void					setNumTouchPointsMax( int32_t v );
-	void					setNumTouchPointsMin( int32_t v );
-	void					setPan( const ci::vec2& v );
-	void					setPanMax( const ci::vec2& v );
-	void					setPanMin( const ci::vec2& v );
-	void					setPanSpeed( const ci::vec2& v );
-	void					setPanThreshold( const ci::vec2& v );
-	void					setRotation( float v );
-	void 					setRotationSpeed( float v );
-	void 					setRotationThreshold( float v );
-	void					setScale( const ci::vec2& v );
-	void					setScaleMax( const ci::vec2& v );
-	void					setScaleMin( const ci::vec2& v );
-	void					setScaleSpeed( const ci::vec2& v );
-	void 					setScaleThreshold( const ci::vec2& v );
-	void					setTapDelay( double v );
-	void					setTapThreshold( float v );
-	void					zero( bool pan = true, bool rotation = true, bool scale = true );
 	
+	// Sets interpolation speed to \a v. This is rate at which motion updates.
+	// Values should remain between 0.0 and 1.0. Higher values are more
+	// responsive. Lower values are smoother. Default is 0.33.
+	void					setInterpolationSpeed( float v );
+	
+	// Sets interactive mask to \a path. Only touches occurring inside
+	// the mask will be processed.
+	void					setMask( const ci::Path2d& path );
+	// Convenience method for creating an interactive mask from \a bounds.
+	void					setMask( const ci::Rectf& bounds );
+	// Convenience method for creating an interactive mask from circle at
+	// \a center with a radius of \a radius and \a numSegments segments.
+	void					setMask( const ci::vec2& center, float radius, size_t numSegments = 12 );
+	
+	// Limits number of touch points to between \a min and \a max. This is
+	// the total number of touch points on the screen; not just within the
+	// interactive mask. Default is 1 and numeric_limits<int32_t>::max().
+	void					setNumTouchPoints( int32_t min, int32_t max );
+	// Limits number of touch points to \a max. This is the total number of
+	// touch points on the screen; not just within the interactive mask.
+	// Default is numeric_limits<int32_t>::max().
+	void					setNumTouchPointsMax( int32_t v );
+	// Requires \a min number of touch points. This is the total number of
+	// touch points on the screen; not just within the interactive mask.
+	// Default is 1.
+	void					setNumTouchPointsMin( int32_t v );
+	
+	// Sets pan position in pixels to \a v. Default is vec2( 0.0f ).
+	// Set \a interpolate to false to update value immediately. Default is true.
+	void					setPan( const ci::vec2& v, bool interpolate = true );
+	// Sets maximum pan position in pixels to \a v. Default is
+	// vec2( numeric_limits<float>::max() ).
+	void					setPanMax( const ci::vec2& v );
+	// Sets minimum pan position in pixels to \a v. Default is
+	// vec2( -numeric_limits<float>::max() ).
+	void					setPanMin( const ci::vec2& v );
+	// Sets pan speed in pixels to \a v. Default is vec2( 1.0f ).
+	void					setPanSpeed( const ci::vec2& v );
+	// Sets minimum movement threshold for pan in pixels to \a v.
+	// Default is vec2( 1.0f ).
+	void					setPanThreshold( const ci::vec2& v );
+	
+	// Sets rotation angle in radians to \a v.  Default is 0.0f.
+	// Set \a interpolate to false to update value immediately. Default is true.
+	void					setRotation( float v, bool interpolate = true );
+	// Sets rotation speed to \a v. This value is multiplied by
+	// an interaction's rotation angle. The default is -2.5f.
+	void 					setRotationSpeed( float v );
+	// Sets threshold for minimum rotation angle. Default is 0.005f.
+	void 					setRotationThreshold( float v );
+	
+	// Sets scale to \a v. Default is vec2( 1.0 ).
+	// Set \a interpolate to false to update value immediately. Default is true.
+	void					setScale( const ci::vec2& v, bool interpolate = true );
+	// Sets maximum scale to \a v. Default is vec2( numeric_limits<float>::max() ).
+	void					setScaleMax( const ci::vec2& v );
+	// Sets minimum scale to \a v. Default is vec2( 0.0f ).
+	void					setScaleMin( const ci::vec2& v );
+	// Sets scale speed to \a v. This value is multipled by the scale distance
+	// in pixels. Default is vec2( 0.0067f ).
+	void					setScaleSpeed( const ci::vec2& v );
+	// Sets minimum movement threshold for pan in pixels to \a v.
+	// Default is vec2( 1.0f ).
+	void 					setScaleThreshold( const ci::vec2& v );
+	
+	// Sets delay in seconds before tap gesture is reset to \a v. Default is 0.07.
+	void					setTapDelay( double v );
+	// Sets maximum offset in pixels from touch to lift to qualify a tap.
+	// Default is 15.0f.
+	void					setTapThreshold( float v );
+	
+	// Resets motion values.
+	// Set \a pan to true to set pan to vec2( 0.0 )
+	// Set \a rotation to true to set rotation to 0.0
+	// Set \a scale to true to set scale to vec2( 1.0 )
+	// Set \a interpolate to false to update values immediately. Default is true.
+	void					zero( bool pan = true, bool rotation = true, bool scale = true, bool interpolate = true );
+	
+	// Returns delay in seconds before records touches are cleared.
 	double					getTouchDelay() const;
+	// Sets delay in seconds before records touches are cleared to \a v.
+	// Default is 0.07.
 	void					setTouchDelay( double v );
+	// Returns touches, if any, which contributed to recent motion or gestures.
 	const std::vector<ci::app::TouchEvent::Touch>& getTouches();
 protected:
 	enum : size_t

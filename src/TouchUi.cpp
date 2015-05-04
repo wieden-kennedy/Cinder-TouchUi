@@ -56,7 +56,7 @@ TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 	mPan				= vec2( 0.0f );
 	mPanMax				= vec2( numeric_limits<float>::max() );
 	mPanMin				= vec2( -numeric_limits<float>::max() );
-	mPanSpeed			= vec2( 0.0067f );
+	mPanSpeed			= vec2( 1.0f );
 	mPanTarget			= mPan;
 	mPanThreshold		= vec2( 1.0f );
 	mRotationSpeed		= -2.5f;
@@ -370,6 +370,11 @@ const vec2& TouchUi::getScaleThreshold() const
 	return mScaleThreshold;
 }
 
+double TouchUi::getTapDelay() const
+{
+	return mTapDelay;
+}
+
 float TouchUi::getTapThreshold() const
 {
 	return mTapThreshold;
@@ -442,9 +447,12 @@ void TouchUi::setNumTouchPointsMin( int32_t v )
 	mNumTouchPointsMin = v;
 }
 
-void TouchUi::setPan( const vec2& v )
+void TouchUi::setPan( const vec2& v, bool interpolate )
 {
-	mPanTarget = v;
+	mPanTarget	= v;
+	if ( !interpolate ) {
+		mPan	= mPanTarget;
+	}
 }
 
 void TouchUi::setPanMax( const vec2& v )
@@ -479,9 +487,12 @@ void TouchUi::setPanThreshold( const vec2& v )
 	mPanThreshold = v;
 }
 
-void TouchUi::setRotation( float v )
+void TouchUi::setRotation( float v, bool interpolate )
 {
-	mRotationTarget.z = wrapAngle( v );
+	mRotationTarget.z	= wrapAngle( v );
+	if ( !interpolate ) {
+		mRotation.z		= mRotationTarget.z;
+	}
 }
 
 void TouchUi::setRotationSpeed( float v )
@@ -494,9 +505,12 @@ void TouchUi::setRotationThreshold( float v )
 	mRotationThreshold = v;
 }
 
-void TouchUi::setScale( const vec2& v )
+void TouchUi::setScale( const vec2& v, bool interpolate )
 {
-	mScaleTarget = v;
+	mScaleTarget	= v;
+	if ( !interpolate ) {
+		mScale		= mScaleTarget;
+	}
 }
 
 void TouchUi::setScaleMax( const vec2& v )
@@ -541,16 +555,16 @@ void TouchUi::setTapThreshold( float v )
 	mTapThreshold = v;
 }
 
-void TouchUi::zero( bool pan, bool rotation, bool scale )
+void TouchUi::zero( bool pan, bool rotation, bool scale, bool interpolate )
 {
 	if ( pan ) {
-		setPan( vec2( 0.0f ) );
+		setPan( vec2( 0.0f ), interpolate );
 	}
 	if ( rotation ) {
-		setRotation( 0.0f );
+		setRotation( 0.0f, interpolate );
 	}
 	if ( scale ) {
-		setScale( vec2( 1.0f ) );
+		setScale( vec2( 1.0f ), interpolate );
 	}
 	resetTap();
 }

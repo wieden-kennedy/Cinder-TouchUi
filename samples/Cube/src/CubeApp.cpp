@@ -37,6 +37,7 @@
 
 #include "cinder/app/App.h"
 #include "cinder/Camera.h"
+#include "cinder/gl/gl.h"
 
 #include "TouchUI.h"
 
@@ -45,16 +46,16 @@ class CubeApp : public ci::app::App
 public:
 	CubeApp();
 
-	void			draw() override;
-	void			resize() override;
-	void			update() override;
+	void				draw() override;
+	void				resize() override;
+	void				update() override;
 private:
-	ci::CameraPersp	mCamera;
-	TouchUi			mTouchUi;
+	ci::CameraPersp		mCamera;
+	ci::gl::VboMeshRef	mCube;
+	TouchUi				mTouchUi;
 };
 
 #include "cinder/app/RendererGl.h"
-#include "cinder/gl/gl.h"
 #include "cinder/Log.h"
 
 using namespace ci;
@@ -69,6 +70,8 @@ CubeApp::CubeApp()
 	mTouchUi.connect( getWindow() );
 	mTouchUi.setScaleMin( vec2( 0.5f ) );
 	
+	mCube = gl::VboMesh::create( geom::WireCube() );
+	
 	gl::enableDepthRead();
 	gl::enableDepthWrite();
 }
@@ -82,7 +85,7 @@ void CubeApp::draw()
 	gl::rotate( mTouchUi.getRotation(), vec3( 1.0f ) );
 	gl::scale( vec3( mTouchUi.getScale().x ) );
 	
-	gl::drawColorCube( vec3( 0.0f ), vec3( 1.0f ) );
+	gl::draw( mCube );
 }
 
 void CubeApp::resize()

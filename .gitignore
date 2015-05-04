@@ -2,6 +2,8 @@
 xcuserdata/
 .DS_Store
 DerivedData/
+build/
+xcshareddata/
 
 *.suo
 *.sdf

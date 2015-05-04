@@ -64,7 +64,7 @@ CircleApp::CircleApp()
 	float t					= 0.0f;
 	const float d			= ( 1.0f / (float)numCircles ) * (float)M_PI * 2.0f;
 	const vec2 c			= getWindowCenter();
-	static const float r	= 150.0f;
+	static const float r	= 120.0f;
 	for ( size_t i = 0; i < numCircles; ++i, t += d ) {
 		TouchUi touchUi( getWindow() );
 		touchUi.disableRotation();
@@ -118,9 +118,8 @@ void CircleApp::update()
 		a.setMask( ap, r, numSegments );
 
 		if ( a.isTapped( true ) ) {
-			CI_LOG_V( "Tapped circle #" << i );
+			CI_LOG_V( "Tapped circle #" << i << " by touchpoint #" << a.getTouches().begin()->getId() );
 		}
-
 		++i;
 	}
 }

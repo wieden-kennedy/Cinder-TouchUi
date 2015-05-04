@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cinder>
+<block
+	name="TouchUi"
+	id="com.wk.touchui"
+	author="Wieden+Kennedy"
+	summary="Sensible touch interaction."
+	git="https://github.com/wieden-kennedy/Cinder-TouchUi.git"
+	version="0.0"
+	>
+	<supports os="ios" />
+	<supports os="macosx" />
+	<supports os="msw" />
+	<source>src/TouchUi.cpp</source>
+	<header>src/TouchUi.h</header>
+	<includePath>src</includePath>
+</block>
+<template>templates/Basic/template.xml</template>
+</cinder>

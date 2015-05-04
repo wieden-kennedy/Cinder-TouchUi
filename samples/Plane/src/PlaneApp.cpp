@@ -36,73 +36,80 @@
 */
 
 #include "cinder/app/App.h"
+#include "cinder/Camera.h"
+#include "cinder/gl/gl.h"
 
 #include "TouchUI.h"
 
-class SquareApp : public ci::app::App
+class PlaneApp : public ci::app::App
 {
 public:
-	SquareApp();
+	PlaneApp();
 
-	void		draw() override;
-	void		update() override;
+	void				draw() override;
+	void				resize() override;
+	void				update() override;
 private:
-	ci::Rectf	mRect;
-	TouchUi		mTouchUi;
+	ci::CameraPersp		mCamera;
+	ci::gl::VboMeshRef	mPlane;
+	TouchUi				mTouchUiOne;
+	TouchUi				mTouchUiTwo;
 };
 
 #include "cinder/app/RendererGl.h"
-#include "cinder/gl/gl.h"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-SquareApp::SquareApp()
+PlaneApp::PlaneApp()
 {
-	vec2 c	= getWindowCenter();
-	vec2 v0 = c + vec2( -100.0f );
-	vec2 v1 = c + vec2( 100.0f );
-	mRect = Rectf( v0, v1 );
-
-	mTouchUi.connect( getWindow() );
-	mTouchUi.disableConstrainMotion();
-	mTouchUi.setInterpolationSpeed( 0.67f );
-	mTouchUi.setMask( mRect );
-	mTouchUi.setPanSpeed( vec2( 1.333f ) );
-	mTouchUi.setScaleMax( vec2( 3.00f ) );
-	mTouchUi.setScaleMin( vec2( 0.75f ) );
-	mTouchUi.setScaleSpeed( mTouchUi.getScaleSpeed() * 3.0f );
+	mCamera = CameraPersp( getWindowWidth(), getWindowHeight(), 45.0f, 0.01f, 100.0f );
+	mCamera.lookAt( vec3( 0.0f, 5.0f, 5.0f ), vec3( 0.0f ) );
+	
+	mTouchUiOne.connect( getWindow() );
+	mTouchUiOne.disableTap();
+	mTouchUiOne.disableRotation();
+	mTouchUiOne.disableScale();
+	mTouchUiOne.setNumTouchPointsMax( 1 );
+	mTouchUiOne.setPanSpeed( vec2( 0.01f ) );
+	
+	mTouchUiTwo.connect( getWindow() );
+	mTouchUiTwo.disableTap();
+	mTouchUiTwo.setNumTouchPoints( 2, 2 );
+	mTouchUiTwo.setScaleMin( vec2( 0.5f ) );
+	
+	mPlane = gl::VboMesh::create( geom::WirePlane().subdivisions( ivec2( 128, 128 ) ) );
+	
+	gl::enableDepthRead();
+	gl::enableDepthWrite();
 }
 
-void SquareApp::draw()
+void PlaneApp::draw()
 {
 	gl::clear();
-	gl::setMatricesWindow( getWindowSize() );
+	gl::setMatrices( mCamera );
 	
-	gl::draw( mTouchUi.getMask() );
+	gl::translate( vec3( mTouchUiTwo.getPan().x, 0.0f, mTouchUiTwo.getPan().y ) );
+	gl::rotate( mTouchUiTwo.getRotation(), vec3( 0.0f, 1.0f, 0.0f ) );
+	gl::scale( vec3( mTouchUiTwo.getScale().x ) );
+	
+	gl::draw( mPlane );
 }
 
-void SquareApp::update()
+void PlaneApp::resize()
 {
-	mat3 m( 1.0f );
-	m = glm::translate( m, mTouchUi.getPan() );
-	m = glm::translate( m, mRect.getCenter() );
-	m = glm::rotate( m, -mTouchUi.getRotation() );
-	m = glm::scale( m, vec2( mTouchUi.getScale() ) );
-	m = glm::translate( m, -mRect.getCenter() );
-
-	Path2d path;
-	path.moveTo( vec2( m * vec3( mRect.getUpperLeft(),	1.0f ) ) );
-	path.lineTo( vec2( m * vec3( mRect.getUpperRight(), 1.0f ) ) );
-	path.lineTo( vec2( m * vec3( mRect.getLowerRight(), 1.0f ) ) );
-	path.lineTo( vec2( m * vec3( mRect.getLowerLeft(),	1.0f ) ) );
-	path.close();
-
-	mTouchUi.setMask( path );
+	mTouchUiOne.setMask( getWindowBounds() );
+	mTouchUiTwo.setMask( getWindowBounds() );
 }
 
-CINDER_APP( SquareApp, RendererGl, []( App::Settings* settings )
+void PlaneApp::update()
+{
+	vec3 target( -mTouchUiOne.getPan().x, mTouchUiOne.getPan().y, 0.0f );
+	mCamera.lookAt( mCamera.getEyePoint(), target );
+}
+
+CINDER_APP( PlaneApp, RendererGl, []( App::Settings* settings )
 {
 	settings->setHighDensityDisplayEnabled( true );
 	settings->setMultiTouchEnabled( true );

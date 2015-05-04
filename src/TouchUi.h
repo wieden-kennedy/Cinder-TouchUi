@@ -125,6 +125,10 @@ public:
 	void					setTapDelay( double v );
 	void					setTapThreshold( float v );
 	void					zero( bool pan = true, bool rotation = true, bool scale = true );
+	
+	double					getTouchDelay() const;
+	void					setTouchDelay( double v );
+	const std::vector<ci::app::TouchEvent::Touch>& getTouches();
 protected:
 	enum : size_t
 	{
@@ -135,6 +139,9 @@ protected:
 		MotionType_ScaleY
 	} typedef MotionType;
 	typedef std::pair<MotionType, float> Motion;
+	
+	std::vector<ci::app::TouchEvent::Touch>	mTouches;
+	void					pushTouch( const ci::app::TouchEvent::Touch& touch );
 	
 	void					touchesBegan( ci::app::TouchEvent& event );
 	void					touchesEnded( ci::app::TouchEvent& event );
@@ -181,8 +188,10 @@ protected:
 	ci::vec2				mTapPosition;
 	double					mTapTime;
 	float					mTapThreshold;
+	double					mTouchDelay;
+	double					mTouchTime;
 	void					resetTap();
-
+	
 	bool					isEventValid( const ci::app::TouchEvent& event ) const;
 	float					wrapAngle( float v );
 };

@@ -177,7 +177,6 @@ protected:
 	bool					mScaleSymmetry;
 	ci::vec2				mScaleTarget;
 	ci::vec2 				mScaleThreshold;
-	bool					mTap;
 	double					mTapDelay;
 	ci::vec2				mTapPosition;
 	double					mTapTime;

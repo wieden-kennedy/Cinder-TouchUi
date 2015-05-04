@@ -68,7 +68,6 @@ TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 	mScaleSymmetry		= true;
 	mScaleTarget		= mScale;
 	mScaleThreshold		= vec2( 1.0f );
-	mTap				= false;
 	mTapDelay			= 0.07;
 	mTapPosition		= vec2( numeric_limits<float>::min() );
 	mTapTime			= 0.0;
@@ -117,7 +116,6 @@ TouchUi& TouchUi::operator=( const TouchUi& rhs )
 	mScaleTarget		= rhs.mScaleTarget;
 	mScaleThreshold		= rhs.mScaleThreshold;
 	mSignalPriority		= rhs.mSignalPriority;
-	mTap				= rhs.mTap;
 	mTapDelay			= rhs.mTapDelay;
 	mTapPosition		= rhs.mTapPosition;
 	mTapThreshold		= rhs.mTapThreshold;
@@ -285,12 +283,12 @@ const vec2 TouchUi::getTapPosition( bool clearTapPosition )
 
 bool TouchUi::isTapped() const
 {
-	return mTap;
+	return mTapTime > 0.0 && ( app::App::get()->getElapsedSeconds() - mTapTime ) < mTapDelay;
 }
 
 bool TouchUi::isTapped( bool clearTap )
 {
-	bool tap = mTap;
+	bool tap = isTapped();
 	if ( clearTap ) {
 		resetTap();
 	}
@@ -558,11 +556,14 @@ void TouchUi::touchesBegan( TouchEvent& event )
 		return;
 	}
 
-	if ( mEnabledTap && event.getTouches().size() == 1 ) {
-		const vec2 tap = event.getTouches().begin()->getPos();
-		if ( mMask.contains( tap ) ) {
-			mTapPosition	= tap;
-			mTapTime		= app::App::get()->getElapsedSeconds();
+	if ( mEnabledTap ) {
+		for ( const TouchEvent::Touch& touch : event.getTouches() ) {
+			const vec2& tap = touch.getPos();
+			if ( mMask.contains( tap ) ) {
+				mTapPosition	= tap;
+				mTapTime		= app::App::get()->getElapsedSeconds();
+				break;
+			}
 		}
 	}
 }
@@ -573,12 +574,14 @@ void TouchUi::touchesEnded( app::TouchEvent& event )
 		return;
 	}
 
-	if ( mEnabledTap && mTapTime > 0.0 && event.getTouches().size() == 1 ) {
-		const vec2 tap( event.getTouches().begin()->getPos() );
-		if ( mMask.contains( tap ) && glm::distance( tap, mTapPosition ) < mTapThreshold ) {
-			mTap			= true;
-			mTapPosition	= tap;
-			mTapTime		= app::App::get()->getElapsedSeconds();
+	if ( mEnabledTap && mTapTime > 0.0 ) {
+		for ( const TouchEvent::Touch& touch : event.getTouches() ) {
+			const vec2& tap = touch.getPos();
+			if ( mMask.contains( tap ) && glm::distance( tap, mTapPosition ) < mTapThreshold ) {
+				mTapPosition	= tap;
+				mTapTime		= app::App::get()->getElapsedSeconds();
+				break;
+			}
 		}
 	}
 }
@@ -589,16 +592,17 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 		return;
 	}
 
-	// End tap if multiple touches or location has moved too far
-	const size_t numTouches = event.getTouches().size();
 	if ( mEnabledTap ) {
-		if ( numTouches > 1 ) {
-			resetTap();
-		} else {
-			const vec2 tap( event.getTouches().begin()->getPos() );
-			if ( !mMask.contains( tap ) || glm::distance( tap, mTapPosition ) > mTapThreshold ) {
-				resetTap();
+		bool tapped = false;
+		for ( const TouchEvent::Touch& touch : event.getTouches() ) {
+			const vec2& tap = touch.getPos();
+			if ( mMask.contains( tap ) && glm::distance( tap, mTapPosition ) < mTapThreshold ) {
+				tapped = true;
+				break;
 			}
+		}
+		if ( !tapped ) {
+			resetTap();
 		}
 	}
 	
@@ -626,7 +630,7 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 	}
 	
 	// Multi-touch
-	if ( numTouches > 1 && mNumTouchPointsMax > 1 ) {
+	if ( event.getTouches().size() > 1 && mNumTouchPointsMax > 1 ) {
 		const TouchEvent::Touch& a = *event.getTouches().begin();
 		const TouchEvent::Touch& b = *( event.getTouches().begin() + 1 );
 		const vec2 ap0( a.getPos() );
@@ -729,7 +733,6 @@ void TouchUi::update()
 
 void TouchUi::resetTap()
 {
-	mTap			= false;
 	mTapPosition	= vec2( numeric_limits<float>::min() );
 	mTapTime		= 0.0;
 }

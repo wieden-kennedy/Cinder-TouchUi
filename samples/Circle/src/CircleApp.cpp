@@ -116,6 +116,11 @@ void CircleApp::update()
 			++j;
 		}
 		a.setMask( ap, r, numSegments );
+
+		if ( a.isTapped( true ) ) {
+			CI_LOG_V( "Tapped circle #" << i );
+		}
+
 		++i;
 	}
 }

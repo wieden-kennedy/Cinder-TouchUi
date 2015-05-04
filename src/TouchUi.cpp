@@ -279,7 +279,7 @@ const vec2& TouchUi::getTapPosition() const
 
 const vec2 TouchUi::getTapPosition( bool clearTapPosition )
 {
-	vec2 tapPosition = mTapPosition;
+	const vec2 tapPosition = mTapPosition;
 	if ( clearTapPosition ) {
 		resetTap();
 	}
@@ -293,7 +293,7 @@ bool TouchUi::isTapped() const
 
 bool TouchUi::isTapped( bool clearTap )
 {
-	bool tap = isTapped();
+	const bool tap = isTapped();
 	if ( clearTap ) {
 		resetTap();
 	}
@@ -418,10 +418,10 @@ void TouchUi::setMask( const Rectf& bounds )
 void TouchUi::setMask( const vec2& center, float radius, size_t numSegments )
 {
 	mMask.clear();
-	float t			= 0.0f;
-	const float d	= ( 1.0f / (float)numSegments ) * (float)M_PI * 2.0f;
+	float t				= 0.0f;
+	const float d		= ( 1.0f / (float)numSegments ) * (float)M_PI * 2.0f;
 	for ( size_t i = 0; i < numSegments; ++i, t += d ) {
-		vec2 v = center + vec2( glm::cos( t ), glm::sin( t ) ) * radius;
+		const vec2 v	= center + vec2( glm::cos( t ), glm::sin( t ) ) * radius;
 		if ( i == 0 ) {
 			mMask.moveTo( v );
 		} else {
@@ -787,7 +787,7 @@ void TouchUi::update()
 		mScaleTarget	= glm::clamp( mScaleTarget, mScaleMin, mScaleMax );
 		mScale			= glm::mix( mScale, mScaleTarget, mInterpolationSpeed );
 	}
-	double e = getElapsedSeconds();
+	const double e = getElapsedSeconds();
 	if ( !mEnabledTap || ( mTapTime > 0.0 && ( e - mTapTime ) > mTapDelay ) ) {
 		resetTap();
 	}

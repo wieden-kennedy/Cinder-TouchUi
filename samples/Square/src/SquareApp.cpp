@@ -60,9 +60,9 @@ using namespace std;
 
 SquareApp::SquareApp()
 {
-	vec2 c	= getWindowCenter();
-	vec2 v0 = c + vec2( -100.0f );
-	vec2 v1 = c + vec2( 100.0f );
+	const vec2 c	= getWindowCenter();
+	const vec2 v0	= c + vec2( -100.0f );
+	const vec2 v1	= c + vec2( 100.0f );
 	mRect = Rectf( v0, v1 );
 
 	mTouchUi.connect( getWindow() );

@@ -72,7 +72,7 @@ CircleApp::CircleApp()
 		touchUi.setInterpolationSpeed( 0.8f );
 		touchUi.setPanSpeed( vec2( 0.5f ) );
 
-		vec2 v = c + vec2( glm::cos( t ), glm::sin( t ) ) * r;
+		const vec2 v = c + vec2( glm::cos( t ), glm::sin( t ) ) * r;
 		touchUi.setMask( v, r * 0.5f, 32 );
 		touchUi.setPan( v );
 

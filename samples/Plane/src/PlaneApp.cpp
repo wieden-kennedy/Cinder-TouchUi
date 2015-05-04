@@ -107,7 +107,7 @@ void PlaneApp::resize()
 
 void PlaneApp::update()
 {
-	vec3 target( -mTouchUiOne.getPan().x, mTouchUiOne.getPan().y, 0.0f );
+	const vec3 target( -mTouchUiOne.getPan().x, mTouchUiOne.getPan().y, 0.0f );
 	mCamera.lookAt( mCamera.getEyePoint(), target );
 }
 

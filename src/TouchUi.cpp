@@ -688,7 +688,7 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 	// Multi-touch
 	TouchEvent::Touch a;
 	TouchEvent::Touch b;
-	size_t numTouches;
+	size_t numTouches = event.getTouches().size();
 	if ( numTouches > 1 && mNumTouchPointsMax > 1 ) {
 		a = *event.getTouches().begin();
 		b = *( event.getTouches().begin() + 1 );

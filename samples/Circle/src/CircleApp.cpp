@@ -39,16 +39,15 @@
 
 #include "TouchUI.h"
 
-class SquareApp : public ci::app::App
+class CircleApp : public ci::app::App
 {
 public:
-	SquareApp();
+	CircleApp();
 
-	void		draw() override;
-	void		update() override;
+	void				draw() override;
+	void				update() override;
 private:
-	ci::Rectf	mRect;
-	TouchUi		mTouchUi;
+	std::list<TouchUi>	mTouchUis;
 };
 
 #include "cinder/app/RendererGl.h"
@@ -59,51 +58,69 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-SquareApp::SquareApp()
+CircleApp::CircleApp()
 {
-	vec2 c	= getWindowCenter();
-	vec2 v0 = c + vec2( -100.0f );
-	vec2 v1 = c + vec2( 100.0f );
-	mRect = Rectf( v0, v1 );
+	const size_t numCircles = 5;
+	float t					= 0.0f;
+	const float d			= ( 1.0f / (float)numCircles ) * (float)M_PI * 2.0f;
+	const vec2 c			= getWindowCenter();
+	static const float r	= 150.0f;
+	for ( size_t i = 0; i < numCircles; ++i, t += d ) {
+		TouchUi touchUi( getWindow() );
+		touchUi.disableRotation();
+		touchUi.disableScale();
+		touchUi.setInterpolationSpeed( 0.8f );
+		touchUi.setPanSpeed( vec2( 0.5f ) );
 
-	mTouchUi.connect( getWindow() );
-	mTouchUi.disableConstrainMotion();
-	mTouchUi.setInterpolationSpeed( 0.67f );
-	mTouchUi.setMask( mRect );
-	mTouchUi.setPanSpeed( vec2( 1.333f ) );
-	mTouchUi.setScaleMax( vec2( 3.00f ) );
-	mTouchUi.setScaleMin( vec2( 0.75f ) );
-	mTouchUi.setScaleSpeed( mTouchUi.getScaleSpeed() * 3.0f );
+		vec2 v = c + vec2( glm::cos( t ), glm::sin( t ) ) * r;
+		touchUi.setMask( v, r * 0.5f, 32 );
+		touchUi.setPan( v );
+
+		mTouchUis.push_back( touchUi );
+	}
 }
 
-void SquareApp::draw()
+void CircleApp::draw()
 {
 	gl::clear();
 	gl::setMatricesWindow( getWindowSize() );
 	
-	gl::draw( mTouchUi.getMask() );
+	for ( const TouchUi& touchUi : mTouchUis ) {
+		gl::draw( touchUi.getMask() );
+	}
 }
 
-void SquareApp::update()
+void CircleApp::update()
 {
-	mat3 m( 1.0f );
-	m = glm::translate( m, mTouchUi.getPan() );
-	m = glm::translate( m, mRect.getCenter() );
-	m = glm::rotate( m, -mTouchUi.getRotation() );
-	m = glm::scale( m, vec2( mTouchUi.getScale() ) );
-	m = glm::translate( m, -mRect.getCenter() );
-
-	Path2d path;
-	path.moveTo( vec2( m * vec3( mRect.getUpperLeft(),	1.0f ) ) );
-	path.lineTo( vec2( m * vec3( mRect.getUpperRight(), 1.0f ) ) );
-	path.lineTo( vec2( m * vec3( mRect.getLowerRight(), 1.0f ) ) );
-	path.lineTo( vec2( m * vec3( mRect.getLowerLeft(),	1.0f ) ) );
-	path.close();
-
-	mTouchUi.setMask( path );
+	static const float pi = (float)M_PI;
+	size_t i = 0;
+	for ( TouchUi& a : mTouchUis ) {
+		const Path2d& mask			= a.getMask();
+		const float r				= mask.calcBoundingBox().getWidth() * 0.5f;
+		const size_t numSegments	= mask.getNumSegments();
+		vec2 ap						= a.getPan();
+		size_t j = 0;
+		for ( TouchUi& b : mTouchUis ) {
+			if ( i != j ) {
+				vec2 bp = b.getPan();
+				float d = glm::distance( ap, bp );
+				if ( d < r * 2.0f ) {
+					float a = atan2( ap.y - bp.y, ap.x - bp.x );
+					a = a < pi ? a + pi : a - pi;
+					vec2 v	= vec2( glm::cos( a ), glm::sin( a ) ) * r * 2.0f * 0.05f;
+					ap		-= v;
+					bp		+= v;
+					b.setPan( bp );
+				}
+			}
+			++j;
+		}
+		a.setMask( ap, r, numSegments );
+		++i;
+	}
 }
 
-CINDER_APP( SquareApp, RendererGl, []( App::Settings* settings )
+CINDER_APP( CircleApp, RendererGl, []( App::Settings* settings )
 {
 	settings->setHighDensityDisplayEnabled( true );
 	settings->setMultiTouchEnabled( true );

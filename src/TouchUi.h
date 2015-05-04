@@ -53,10 +53,28 @@ public:
 
 	void					connect( const ci::app::WindowRef& window, int signalPriority = 0 );
 	void					disconnect();
+
 	void					enable( bool enable = true );
 	void					disable();
 	bool					isEnabled() const;
-	
+
+	void					enableConstrainMotion( bool enable = true );
+	void					disableConstrainMotion();
+	bool					isConstrainMotionEnabled() const;
+
+	void					enablePan( bool enable = true );
+	void					disablePan();
+	bool					isPanEnabled() const;
+	void					enableRotation( bool enable = true );
+	void					disableRotation();
+	bool					isRotationEnabled() const;
+	void					enableScale( bool enable = true );
+	void					disableScale();
+	bool					isScaleEnabled() const;
+	void					enableTap( bool enable = true );
+	void					disableTap();
+	bool					isTapEnabled() const;
+
 	const ci::vec2&			getPan() const;
 	float					getRotation() const;
 	const ci::vec2&			getScale() const;
@@ -131,6 +149,12 @@ protected:
 	bool					mEnabled;
 	int32_t					mSignalPriority;
 	ci::app::WindowRef		mWindow;
+
+	bool					mEnabledConstrain;
+	bool					mEnabledPan;
+	bool					mEnabledRotation;
+	bool					mEnabledScale;
+	bool					mEnabledTap;
 	
 	float					mInterpolationSpeed;
 	ci::Path2d				mMask;

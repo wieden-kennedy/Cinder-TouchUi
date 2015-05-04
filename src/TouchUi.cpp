@@ -45,6 +45,11 @@ using namespace std;
 TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 {
 	mEnabled			= true;
+	mEnabledConstrain	= true;
+	mEnabledPan			= true;
+	mEnabledRotation	= true;
+	mEnabledScale		= true;
+	mEnabledTap			= true;
 	mInterpolationSpeed	= 0.33f;
 	mNumTouchPointsMax	= numeric_limits<int32_t>::max();
 	mNumTouchPointsMin	= 1;
@@ -53,7 +58,7 @@ TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 	mPanMin				= vec2( -numeric_limits<float>::max() );
 	mPanSpeed			= vec2( 0.0067f );
 	mPanTarget			= mPan;
-	mPanThreshold		= toPixels( vec2( 1.0f ) );
+	mPanThreshold		= vec2( 1.0f );
 	mRotationSpeed		= -2.5f;
 	mRotationThreshold	= 0.005f;
 	mScale				= vec2( 1.0f );
@@ -62,12 +67,12 @@ TouchUi::TouchUi( const WindowRef& window, int signalPriority )
 	mScaleSpeed			= vec2( 0.0067f );
 	mScaleSymmetry		= true;
 	mScaleTarget		= mScale;
-	mScaleThreshold		= toPixels( vec2( 1.0f ) );
+	mScaleThreshold		= vec2( 1.0f );
 	mTap				= false;
 	mTapDelay			= 0.07;
 	mTapPosition		= vec2( numeric_limits<float>::min() );
 	mTapTime			= 0.0;
-	mTapThreshold		= toPixels( 15.0f );
+	mTapThreshold		= 15.0f;
 
 	if ( window != nullptr ) {
 		setMask( Area( ivec2( 0 ), window->getSize() ) );
@@ -89,6 +94,11 @@ TouchUi::~TouchUi()
 TouchUi& TouchUi::operator=( const TouchUi& rhs )
 {
 	mEnabled			= rhs.mEnabled;
+	mEnabledConstrain	= rhs.mEnabledConstrain;
+	mEnabledPan			= rhs.mEnabledPan;
+	mEnabledRotation	= rhs.mEnabledRotation;
+	mEnabledScale		= rhs.mEnabledScale;
+	mEnabledTap			= rhs.mEnabledTap;
 	mInterpolationSpeed	= rhs.mInterpolationSpeed;
 	mMask				= rhs.mMask;
 	mNumTouchPointsMax	= rhs.mNumTouchPointsMax;
@@ -154,20 +164,94 @@ void TouchUi::disconnect()
 	mWindow.reset();
 }
 
+void TouchUi::enable( bool enable )
+{
+	mEnabled = enable;
+}
 
 void TouchUi::disable()
 {
 	mEnabled = false;
 }
 
-void TouchUi::enable( bool enable )
-{
-	mEnabled = enable;
-}
-
 bool TouchUi::isEnabled() const
 {
 	return mEnabled;
+}
+
+void TouchUi::enableConstrainMotion( bool enable )
+{
+	mEnabledConstrain = enable;
+}
+
+void TouchUi::disableConstrainMotion()
+{
+	mEnabledConstrain = false;
+}
+
+bool TouchUi::isConstrainMotionEnabled() const
+{
+	return mEnabledConstrain;
+}
+
+void TouchUi::enablePan( bool enable )
+{
+	mEnabledPan = enable;
+}
+
+void TouchUi::disablePan()
+{
+	mEnabledPan = false;
+}
+
+bool TouchUi::isPanEnabled() const
+{
+	return mEnabledPan;
+}
+
+void TouchUi::enableRotation( bool enable )
+{
+	mEnabledRotation = enable;
+}
+
+void TouchUi::disableRotation()
+{
+	mEnabledRotation = false;
+}
+
+bool TouchUi::isRotationEnabled() const
+{
+	return mEnabledRotation;
+}
+
+void TouchUi::enableScale( bool enable )
+{
+	mEnabledScale = enable;
+}
+
+void TouchUi::disableScale()
+{
+	mEnabledScale = false;
+}
+
+bool TouchUi::isScaleEnabled() const
+{
+	return mEnabledScale;
+}
+
+void TouchUi::enableTap( bool enable )
+{
+	mEnabledTap = enable;
+}
+
+void TouchUi::disableTap()
+{
+	mEnabledTap = false;
+}
+
+bool TouchUi::isTapEnabled() const
+{
+	return mEnabledTap;
 }
 
 const vec2& TouchUi::getPan() const
@@ -316,10 +400,10 @@ void TouchUi::setMask( const Path2d& path )
 void TouchUi::setMask( const Rectf& bounds )
 {
 	mMask.clear();
-	mMask.moveTo( toPixels( bounds.getUpperLeft() ) );
-	mMask.lineTo( toPixels( bounds.getUpperRight() ) );
-	mMask.lineTo( toPixels( bounds.getLowerRight() ) );
-	mMask.lineTo( toPixels( bounds.getLowerLeft() ) );
+	mMask.moveTo( bounds.getUpperLeft() );
+	mMask.lineTo( bounds.getUpperRight() );
+	mMask.lineTo( bounds.getLowerRight() );
+	mMask.lineTo( bounds.getLowerLeft() );
 	mMask.close();
 }
 
@@ -329,7 +413,7 @@ void TouchUi::setMask( const vec2& center, float radius, size_t numSegments )
 	float t			= 0.0f;
 	const float d	= ( 1.0f / (float)numSegments ) * (float)M_PI * 2.0f;
 	for ( size_t i = 0; i < numSegments; ++i, t += d ) {
-		vec2 v = toPixels( center + vec2( glm::cos( t ), glm::sin( t ) ) * radius );
+		vec2 v = center + vec2( glm::cos( t ), glm::sin( t ) ) * radius;
 		if ( i == 0 ) {
 			mMask.moveTo( v );
 		} else {
@@ -474,8 +558,8 @@ void TouchUi::touchesBegan( TouchEvent& event )
 		return;
 	}
 
-	if ( event.getTouches().size() == 1 ) {
-		const vec2 tap = toPixels( event.getTouches().begin()->getPos() );
+	if ( mEnabledTap && event.getTouches().size() == 1 ) {
+		const vec2 tap = event.getTouches().begin()->getPos();
 		if ( mMask.contains( tap ) ) {
 			mTapPosition	= tap;
 			mTapTime		= app::App::get()->getElapsedSeconds();
@@ -489,8 +573,8 @@ void TouchUi::touchesEnded( app::TouchEvent& event )
 		return;
 	}
 
-	if ( mTapTime > 0.0 && event.getTouches().size() == 1 ) {
-		const vec2 tap( toPixels( event.getTouches().begin()->getPos() ) );
+	if ( mEnabledTap && mTapTime > 0.0 && event.getTouches().size() == 1 ) {
+		const vec2 tap( event.getTouches().begin()->getPos() );
 		if ( mMask.contains( tap ) && glm::distance( tap, mTapPosition ) < mTapThreshold ) {
 			mTap			= true;
 			mTapPosition	= tap;
@@ -506,13 +590,15 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 	}
 
 	// End tap if multiple touches or location has moved too far
-	const size_t numTouches = event.getTouches().size(); 
-	if ( numTouches > 1 ) {
-		resetTap();
-	} else {
-		const vec2 tap( toPixels( event.getTouches().begin()->getPos() ) );
-		if ( !mMask.contains( tap ) || glm::distance( tap, mTapPosition ) > mTapThreshold ) {
+	const size_t numTouches = event.getTouches().size();
+	if ( mEnabledTap ) {
+		if ( numTouches > 1 ) {
 			resetTap();
+		} else {
+			const vec2 tap( event.getTouches().begin()->getPos() );
+			if ( !mMask.contains( tap ) || glm::distance( tap, mTapPosition ) > mTapThreshold ) {
+				resetTap();
+			}
 		}
 	}
 	
@@ -527,13 +613,15 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 	float rotation	= 0.0f;
 
 	// Pan
-	if ( numTouches > 0 ) {
-		const TouchEvent::Touch& touch = *event.getTouches().begin();
-		const vec2 a( toPixels( touch.getPos() ) );
-		const vec2 b( toPixels( touch.getPrevPos() ) );
-		if ( mMask.contains( b ) ) {
-			panX = a.x - b.x;
-			panY = a.y - b.y;
+	if ( mEnabledPan ) {
+		for ( const TouchEvent::Touch& touch : event.getTouches() ) {
+			const vec2 a( touch.getPos() );
+			const vec2 b( touch.getPrevPos() );
+			if ( mMask.contains( b ) ) {
+				panX = a.x - b.x;
+				panY = a.y - b.y;
+				break;
+			}
 		}
 	}
 	
@@ -541,74 +629,100 @@ void TouchUi::touchesMoved( app::TouchEvent& event )
 	if ( numTouches > 1 && mNumTouchPointsMax > 1 ) {
 		const TouchEvent::Touch& a = *event.getTouches().begin();
 		const TouchEvent::Touch& b = *( event.getTouches().begin() + 1 );
-		const vec2 ap0( toPixels( a.getPos() ) );
-		const vec2 ap1( toPixels( a.getPrevPos() ) );
-		const vec2 bp0( toPixels( b.getPos() ) );
-		const vec2 bp1( toPixels( b.getPrevPos() ) );
+		const vec2 ap0( a.getPos() );
+		const vec2 ap1( a.getPrevPos() );
+		const vec2 bp0( b.getPos() );
+		const vec2 bp1( b.getPrevPos() );
 		if ( mMask.contains( bp0 ) && mMask.contains( bp1 ) ) {
 
 			// Scale
-			float dx0 = glm::distance( ap0.x, bp0.x );
-			float dx1 = glm::distance( ap1.x, bp1.x );
-			scaleX = dx0 - dx1;
+			if ( mEnabledScale ) {
+				float dx0 = glm::distance( ap0.x, bp0.x );
+				float dx1 = glm::distance( ap1.x, bp1.x );
+				scaleX = dx0 - dx1;
 
-			float dy0 = glm::distance( ap0.y, bp0.y );
-			float dy1 = glm::distance( ap1.y, bp1.y );
-			scaleY = dy0 - dy1;
+				float dy0 = glm::distance( ap0.y, bp0.y );
+				float dy1 = glm::distance( ap1.y, bp1.y );
+				scaleY = dy0 - dy1;
+			}
 
 			// Rotation
-			float a0 = atan2( ap0.y - bp0.y, ap0.x - bp0.x );
-			float a1 = atan2( ap1.y - bp1.y, ap1.x - bp1.x );
-			rotation = wrapAngle( a0 - a1 );
+			if ( mEnabledRotation ) {
+				float a0 = atan2( ap0.y - bp0.y, ap0.x - bp0.x );
+				float a1 = atan2( ap1.y - bp1.y, ap1.x - bp1.x );
+				rotation = wrapAngle( a0 - a1 );
+			}
+		}
+	}
+
+	bool applyPan		= false;
+	bool applyRotation	= false;
+	bool applyScale		= false;
+	vector<Motion> motions = {
+		{ MotionType_PanX, abs( panX ) / mPanThreshold.x },
+		{ MotionType_PanY, abs( panY ) / mPanThreshold.y },
+		{ MotionType_Rotation, abs( rotation ) / mRotationThreshold },
+		{ MotionType_ScaleX, abs( scaleX ) / mScaleThreshold.x },
+		{ MotionType_ScaleY, abs( scaleY ) / mScaleThreshold.y },
+	};
+
+	auto evaluateMotion = [ &applyPan, &applyRotation, &applyScale ]( const Motion& motion )
+	{
+		MotionType t = motion.first;
+		if ( motion.second > 1.0f ) {
+			if ( t == MotionType_PanX || t == MotionType_PanY ) {
+				applyPan = true;
+			} else if ( t == MotionType_Rotation ) {
+				applyRotation = true;
+			} else if ( t == MotionType_ScaleX || t == MotionType_ScaleY ) {
+				applyScale = true;
+			}
+		}
+	};
+
+	if ( mEnabledConstrain ) {
+		sort( motions.begin(), motions.end(), []( const Motion& a, const Motion& b ) -> bool
+		{
+			return a.second > b.second;
+		} );
+		evaluateMotion( *motions.begin() );
+	} else {
+		for ( const Motion& motion : motions ) {
+			evaluateMotion( motion );
 		}
 	}
 	
-	// Sort motions
-	vector<Motion> motions = {
-		{ MotionType_PanX,		abs( panX ) / mPanThreshold.x },
-		{ MotionType_PanY,		abs( panY ) / mPanThreshold.y },
-		{ MotionType_Rotation,	abs( rotation ) / mRotationThreshold },
-		{ MotionType_ScaleX,	abs( scaleX ) / mScaleThreshold.x },
-		{ MotionType_ScaleY,	abs( scaleY ) / mScaleThreshold.y },
-	};
-	sort( motions.begin(), motions.end(), []( const Motion& a, const Motion& b ) -> bool
-	{
-		return a.second > b.second;
-	} );
-	
-	// Apply only most dominate motion
-	if ( motions.begin()->second > 1.0f ) {
-		switch ( motions.begin()->first ) {
-			case MotionType_PanX:
-				mPanTarget.x		+= panX * panSpeed.x;
-				break;
-			case MotionType_PanY:
-				mPanTarget.y		+= panY * panSpeed.y;
-				break;
-			case MotionType_Rotation:
-				mRotationTarget.z	+= rotation * mRotationSpeed;
-				break;
-			default:
-				if ( mScaleSymmetry ) {
-					mScaleTarget	+= vec2( ( scaleX * mScaleSpeed.x + scaleY * mScaleSpeed.y ) * 0.5f );
-				} else {
-					mScaleTarget	+= vec2( scaleX * mScaleSpeed.x, scaleY * mScaleSpeed.y );
-				}
-				break;
+	if ( applyPan ) {
+		mPanTarget.x += panX * panSpeed.x;
+		mPanTarget.y += panY * panSpeed.y;
+	}
+	if ( applyRotation ) {
+		mRotationTarget.z += rotation * mRotationSpeed;
+	}
+	if ( applyScale ) {
+		if ( mScaleSymmetry ) {
+			mScaleTarget	+= vec2( ( scaleX * mScaleSpeed.x + scaleY * mScaleSpeed.y ) * 0.5f );
+		} else {
+			mScaleTarget	+= vec2( scaleX * mScaleSpeed.x, scaleY * mScaleSpeed.y );
 		}
 	}
 }
 
 void TouchUi::update()
 {	
-	mPanTarget		= glm::clamp( mPanTarget, mPanMin, mPanMax );
-	mScaleTarget	= glm::clamp( mScaleTarget, mScaleMin, mScaleMax );
 	
-	mPan			= glm::mix( mPan, mPanTarget, mInterpolationSpeed );
-	mRotation		= glm::slerp( mRotation, mRotationTarget, mInterpolationSpeed );
-	mScale			= glm::mix( mScale, mScaleTarget, mInterpolationSpeed );
-	
-	if ( mTapTime > 0.0 && ( app::App::get()->getElapsedSeconds() - mTapTime ) > mTapDelay ) {
+	if ( mEnabledPan ) {
+		mPanTarget		= glm::clamp( mPanTarget, mPanMin, mPanMax );
+		mPan			= glm::mix( mPan, mPanTarget, mInterpolationSpeed );
+	}
+	if ( mEnabledRotation ) {
+		mRotation		= glm::slerp( mRotation, mRotationTarget, mInterpolationSpeed );
+	}
+	if ( mEnabledScale ) {
+		mScaleTarget	= glm::clamp( mScaleTarget, mScaleMin, mScaleMax );
+		mScale			= glm::mix( mScale, mScaleTarget, mInterpolationSpeed );
+	}
+	if ( !mEnabledTap || ( mTapTime > 0.0 && app::App::get() && ( app::App::get()->getElapsedSeconds() - mTapTime ) > mTapDelay ) ) {
 		resetTap();
 	}
 }

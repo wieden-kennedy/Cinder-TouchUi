@@ -93,7 +93,7 @@ void _TBOX_PREFIX_App::resize()
 	mTouchUi.setMask( getWindowBounds() );
 }
 
-void CubeApp::update()
+void _TBOX_PREFIX_App::update()
 {
 	if ( mTouchUi.isTapped() ) {
 		CI_LOG_V( mTouchUi.getTapPosition( true ) );

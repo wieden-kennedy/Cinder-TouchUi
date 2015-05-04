@@ -4,7 +4,7 @@
 	name="TouchUi"
 	id="com.wk.touchui"
 	author="Wieden+Kennedy"
-	summary="Sensible touch interaction."
+	summary="Sensible touch interaction"
 	git="https://github.com/wieden-kennedy/Cinder-TouchUi.git"
 	version="0.0"
 	>
@@ -15,5 +15,5 @@
 	<header>src/TouchUi.h</header>
 	<includePath>src</includePath>
 </block>
-<template>templates/Basic/template.xml</template>
+<template>templates/Cube/template.xml</template>
 </cinder>
